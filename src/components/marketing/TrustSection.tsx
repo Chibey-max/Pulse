@@ -30,7 +30,7 @@ const GUARANTEES = [
 
 export function TrustSection() {
   return (
-    <Section id="security" background="border-t border-border">
+    <Section id="security" panel="tint-signal" overlap>
       <div className="flex flex-col gap-10">
         <SectionHeading
           id="security"

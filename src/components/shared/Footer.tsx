@@ -89,7 +89,7 @@ export function Footer({ variant = "marketing", className }: FooterProps) {
   }
 
   return (
-    <footer className={cn("border-border relative w-full border-t", className)}>
+    <footer className={cn("panel-deep relative w-full", className)}>
       <div className="max-w-container px-section-px py-section-py-tight mx-auto grid w-full gap-10 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex flex-col gap-3">
           <AppLogo variant="full" size="md" />

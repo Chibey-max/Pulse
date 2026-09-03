@@ -9,7 +9,7 @@ import { SAMPLE_WINDOW } from "@/lib/sample";
 */
 export function FinalCtaSection() {
   return (
-    <Section id="start" background="border-t border-border" spacing="loose">
+    <Section id="start" panel="deep" overlap spacing="loose">
       <div className="grid items-center gap-12 lg:grid-cols-[1fr_0.8fr] lg:gap-16">
         <div className="flex flex-col gap-6">
           <h2 className="font-display text-h1 text-text-primary max-w-xl font-semibold text-balance">

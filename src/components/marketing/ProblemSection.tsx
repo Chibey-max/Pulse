@@ -17,7 +17,7 @@ const SCATTERED = [
 */
 export function ProblemSection() {
   return (
-    <Section id="problem" background="border-t border-border">
+    <Section id="problem" panel="tint">
       <div className="flex flex-col gap-10">
         <SectionHeading
           id="problem"

@@ -32,7 +32,7 @@ const MODES = [
 
 export function ModesSection() {
   return (
-    <Section id="modes" background="border-t border-border">
+    <Section id="modes" panel="tint-signal" overlap>
       <div className="flex flex-col gap-10">
         <SectionHeading
           id="modes"

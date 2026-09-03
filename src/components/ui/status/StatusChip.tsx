@@ -27,7 +27,7 @@ export function StatusChip({ status, className }: { status: WindowStatus; classN
   return (
     <span
       className={cn(
-        "rounded-pill border-border-bright bg-bg-elevated text-micro inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono tracking-wider uppercase",
+        "rounded-pill border-border bg-bg-elevated text-micro inline-flex items-center gap-1.5 border px-2.5 py-1 font-mono tracking-wider uppercase",
         tone,
         className,
       )}

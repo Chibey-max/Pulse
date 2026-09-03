@@ -18,7 +18,7 @@ const FIELDS = [
 */
 export function SessionPolicySection() {
   return (
-    <Section id="session" background="border-t border-border">
+    <Section id="session" panel="tint" overlap>
       <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-16">
         <SectionHeading
           id="session"

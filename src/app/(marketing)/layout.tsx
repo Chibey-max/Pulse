@@ -1,5 +1,11 @@
 import type { ReactNode } from "react";
-import { AmbientBackground, Footer, JsonLd, NavigationBar } from "@/components/shared";
+import {
+  AmbientBackground,
+  Footer,
+  JsonLd,
+  NavigationBar,
+  ScrollProgress,
+} from "@/components/shared";
 
 /*
   Marketing route group. No wagmi or wallet code, so the landing page never ships the
@@ -12,6 +18,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <AmbientBackground variant="full" />
       <NavigationBar />
       <main id="main" className="flex flex-1 flex-col">
+        <ScrollProgress />
         {children}
       </main>
       <Footer variant="marketing" />

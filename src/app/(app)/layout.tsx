@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AmbientBackground, Footer, Navbar, Providers } from "@/components/shared";
+import { AmbientBackground, Footer, Navbar, Providers, ScrollProgress } from "@/components/shared";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -20,6 +20,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <AmbientBackground variant="subtle" />
       <Navbar />
       <main id="main" className="flex flex-1 flex-col">
+        <ScrollProgress />
         {children}
       </main>
       <Footer variant="app" />

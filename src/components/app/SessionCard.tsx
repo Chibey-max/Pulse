@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { SessionState } from "@/lib/types";
-import { Card, CtaButton, CtaLink } from "@/components/ui";
+import { Card, CountUp, CtaButton, CtaLink } from "@/components/ui";
 import { Skeleton } from "@/components/app/StateNotice";
 import { useSession } from "@/lib/app-data";
 import { useSessionActions } from "@/lib/app-data/session-writes";
@@ -62,7 +62,7 @@ export function SessionCard() {
 
       <div className="flex flex-col gap-1.5">
         <div className="text-caption font-mono-numbers flex items-baseline justify-between font-mono">
-          <span className="text-text-primary">{formatAmount(remaining)} tUSDC</span>
+          <CountUp value={remaining} suffix=" tUSDC" className="text-text-primary" />
           <span className="text-text-muted">of {formatAmount(budget)}</span>
         </div>
         <div className="rounded-pill bg-bg-elevated h-1.5 w-full overflow-hidden">
@@ -76,7 +76,7 @@ export function SessionCard() {
             Windows left
           </dt>
           <dd className="text-body font-mono-numbers text-text-primary font-mono">
-            {session.windowsLeft}
+            <CountUp value={Number(session.windowsLeft)} decimals={0} />
           </dd>
         </div>
         <div className="flex flex-col gap-0.5">

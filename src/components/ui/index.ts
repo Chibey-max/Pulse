@@ -1,4 +1,4 @@
-export { Section, type SectionProps } from "./section/Section";
+export { Section, type SectionPanel, type SectionProps } from "./section/Section";
 export { SectionHeading, type SectionHeadingProps } from "./section/SectionHeading";
 export { CtaButton, type CtaButtonProps } from "./cta/CtaButton";
 export { CtaLink, type CtaLinkProps } from "./cta/CtaLink";
@@ -9,5 +9,7 @@ export { Card, type CardProps } from "./card/Card";
 export { StatusChip } from "./status/StatusChip";
 export { Countdown, type CountdownProps } from "./data/Countdown";
 export { Reveal, type RevealProps } from "./motion/Reveal";
+export { CountUp, type CountUpProps } from "./motion/CountUp";
+export { TiltCard, type TiltCardProps } from "./motion/TiltCard";
 export { Toaster, useToast } from "./toast";
 export type { Toast, ToastAction, ToastApi, ToastOptions, ToastVariant } from "./toast";

@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { AppLogo } from "@/components/shared/AppLogo";
 import { WalletButton } from "@/components/shared/WalletButton";
 import { WalletBalance } from "@/components/app";
@@ -18,9 +20,35 @@ import { cn } from "@/lib/cn";
 */
 export function Navbar() {
   const pathname = usePathname();
+  const prefersReduced = usePrefersReducedMotion();
+  const [scrolled, setScrolled] = useState<boolean>(false);
+  const ticking = useRef<boolean>(false);
+
+  useEffect(() => {
+    const update = (): void => {
+      setScrolled(window.scrollY > 12);
+      ticking.current = false;
+    };
+
+    const onScroll = (): void => {
+      if (ticking.current) return;
+      ticking.current = true;
+      requestAnimationFrame(update);
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <header className="border-border bg-bg/80 sticky top-0 z-40 w-full border-b backdrop-blur-md">
+    <header
+      className={cn(
+        "border-border sticky top-0 z-40 w-full border-b backdrop-blur-md",
+        !prefersReduced && "transition-[background-color,box-shadow] duration-300",
+        scrolled ? "bg-bg/95 shadow-nav" : "bg-bg/70",
+      )}
+    >
       <div className="h-navbar max-w-container px-section-px mx-auto flex w-full items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Link href="/" className="flex items-center rounded" aria-label="Pulse home">
