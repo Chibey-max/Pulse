@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20Minimal} from "../../contracts/interfaces/IERC20Minimal.sol";
-import {MockERC6909} from "./MockERC6909.sol";
+import { IERC20Minimal } from "../../contracts/interfaces/IERC20Minimal.sol";
+import { MockERC6909 } from "./MockERC6909.sol";
 
 contract MockSomniaBinaryPool {
     IERC20Minimal public immutable collateral;
@@ -13,7 +13,12 @@ contract MockSomniaBinaryPool {
     uint256 public fillBps = 10_000;
     uint128 public nextOrderId = 1;
 
-    constructor(IERC20Minimal collateral_, MockERC6909 outcomeToken_, uint256 yesId_, uint256 noId_) {
+    constructor(
+        IERC20Minimal collateral_,
+        MockERC6909 outcomeToken_,
+        uint256 yesId_,
+        uint256 noId_
+    ) {
         collateral = collateral_;
         outcomeToken = outcomeToken_;
         yesId = yesId_;

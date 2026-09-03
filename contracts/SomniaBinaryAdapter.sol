@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20Minimal} from "./interfaces/IERC20Minimal.sol";
-import {IERC6909Minimal} from "./interfaces/IERC6909Minimal.sol";
-import {IPulseMarketAdapter} from "./interfaces/IPulseMarketAdapter.sol";
-import {ISomniaBinaryMarket} from "./interfaces/ISomniaBinaryMarket.sol";
-import {ISomniaBinaryModule} from "./interfaces/ISomniaBinaryModule.sol";
-import {ISomniaBinaryPool} from "./interfaces/ISomniaBinaryPool.sol";
+import { IERC20Minimal } from "./interfaces/IERC20Minimal.sol";
+import { IERC6909Minimal } from "./interfaces/IERC6909Minimal.sol";
+import { IPulseMarketAdapter } from "./interfaces/IPulseMarketAdapter.sol";
+import { ISomniaBinaryMarket } from "./interfaces/ISomniaBinaryMarket.sol";
+import { ISomniaBinaryModule } from "./interfaces/ISomniaBinaryModule.sol";
+import { ISomniaBinaryPool } from "./interfaces/ISomniaBinaryPool.sol";
 
 contract SomniaBinaryAdapter is IPulseMarketAdapter {
     uint8 internal constant BUY_YES = 0;
@@ -22,7 +22,9 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
     uint256 public immutable maxNoPrice;
     bool public moduleApproved;
 
-    mapping(address holder => mapping(bytes32 marketId => mapping(uint8 outcomeIdx => uint256 amount))) public held;
+    mapping(
+        address holder => mapping(bytes32 marketId => mapping(uint8 outcomeIdx => uint256 amount))
+    ) public held;
 
     struct OrderParams {
         uint8 kind;
@@ -31,7 +33,9 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
         uint256 sidePrice;
     }
 
-    event OutcomeRecorded(address indexed holder, bytes32 indexed marketId, uint8 indexed outcomeIdx, uint256 amount);
+    event OutcomeRecorded(
+        address indexed holder, bytes32 indexed marketId, uint8 indexed outcomeIdx, uint256 amount
+    );
     event CollateralRefunded(address indexed holder, bytes32 indexed marketId, uint256 amount);
 
     error InvalidAddress();
@@ -50,7 +54,10 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
         uint256 maxNoPrice_
     ) {
         if (module_ == address(0) || collateral_ == address(0) || outcomeToken_ == address(0)) revert InvalidAddress();
-        if (maxYesPrice_ == 0 || maxYesPrice_ > ONE_COLLATERAL || maxNoPrice_ == 0 || maxNoPrice_ > ONE_COLLATERAL) {
+        if (
+            maxYesPrice_ == 0 || maxYesPrice_ > ONE_COLLATERAL || maxNoPrice_ == 0
+                || maxNoPrice_ > ONE_COLLATERAL
+        ) {
             revert InvalidPrice();
         }
 
@@ -80,7 +87,10 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
         return MarketStatus.Listed;
     }
 
-    function place(bytes32 marketId, uint8 side, uint256 stake, address holder) external returns (bytes32 orderId) {
+    function place(bytes32 marketId, uint8 side, uint256 stake, address holder)
+        external
+        returns (bytes32 orderId)
+    {
         if (holder == address(0)) revert InvalidAddress();
 
         ISomniaBinaryModule.MarketRecord memory record = module.markets(marketId);
@@ -97,20 +107,26 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
         uint256 outcomeId = params.outcomeIdx == 0 ? record.yesId : record.noId;
         uint256 outcomeBefore = outcomeToken.balanceOf(address(this), outcomeId);
 
-        (bool success, uint128 id) = ISomniaBinaryPool(record.pool).placeBinaryOrder(
-            params.kind,
-            params.yesPrice,
-            quantity,
-            uint64(record.expiry) * 1_000_000_000,
-            ORDER_TYPE_MARKET,
-            SELF_MATCH_CANCEL_TAKER,
-            address(0),
-            0,
-            0
-        );
+        (bool success, uint128 id) = ISomniaBinaryPool(record.pool)
+            .placeBinaryOrder(
+                params.kind,
+                params.yesPrice,
+                quantity,
+                uint64(record.expiry) * 1_000_000_000,
+                ORDER_TYPE_MARKET,
+                SELF_MATCH_CANCEL_TAKER,
+                address(0),
+                0,
+                0
+            );
         if (!success) revert PlaceRejected();
 
-        _recordFill(holder, marketId, params.outcomeIdx, outcomeToken.balanceOf(address(this), outcomeId) - outcomeBefore);
+        _recordFill(
+            holder,
+            marketId,
+            params.outcomeIdx,
+            outcomeToken.balanceOf(address(this), outcomeId) - outcomeBefore
+        );
 
         _refundCollateral(holder, marketId, collateral.balanceOf(address(this)) - collateralBefore);
 
@@ -128,10 +144,17 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
 
     function _orderParams(uint8 side) internal view returns (OrderParams memory params) {
         if (side == 0) {
-            return OrderParams({kind: BUY_YES, outcomeIdx: 0, yesPrice: maxYesPrice, sidePrice: maxYesPrice});
+            return OrderParams({
+                kind: BUY_YES, outcomeIdx: 0, yesPrice: maxYesPrice, sidePrice: maxYesPrice
+            });
         }
         if (side == 1) {
-            return OrderParams({kind: BUY_NO, outcomeIdx: 1, yesPrice: ONE_COLLATERAL - maxNoPrice, sidePrice: maxNoPrice});
+            return OrderParams({
+                kind: BUY_NO,
+                outcomeIdx: 1,
+                yesPrice: ONE_COLLATERAL - maxNoPrice,
+                sidePrice: maxNoPrice
+            });
         }
         revert InvalidSide(side);
     }
@@ -146,19 +169,22 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
         }
 
         ISomniaBinaryModule.MarketRecord memory record = module.markets(marketId);
-        (bool ok,) = address(module).call(
-            abi.encodeCall(
-                ISomniaBinaryModule.redeem,
-                (record.originOperatorId, record.originVenueId, marketId, outcomeIdx, amount)
-            )
-        );
+        (bool ok,) = address(module)
+            .call(
+                abi.encodeCall(
+                    ISomniaBinaryModule.redeem,
+                    (record.originOperatorId, record.originVenueId, marketId, outcomeIdx, amount)
+                )
+            );
 
         if (ok) {
             held[holder][marketId][outcomeIdx] = 0;
         }
     }
 
-    function _recordFill(address holder, bytes32 marketId, uint8 outcomeIdx, uint256 amount) internal {
+    function _recordFill(address holder, bytes32 marketId, uint8 outcomeIdx, uint256 amount)
+        internal
+    {
         if (amount == 0) return;
 
         held[holder][marketId][outcomeIdx] += amount;
@@ -173,7 +199,10 @@ contract SomniaBinaryAdapter is IPulseMarketAdapter {
     }
 
     function _setOutcomeOperator(address outcomeToken_, address spender) internal {
-        (bool ok, bytes memory data) = outcomeToken_.call(abi.encodeWithSignature("setOperator(address,bool)", spender, true));
-        if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) revert OperatorApprovalFailed();
+        (bool ok, bytes memory data) =
+            outcomeToken_.call(abi.encodeWithSignature("setOperator(address,bool)", spender, true));
+        if (!ok || (data.length != 0 && !abi.decode(data, (bool)))) {
+            revert OperatorApprovalFailed();
+        }
     }
 }

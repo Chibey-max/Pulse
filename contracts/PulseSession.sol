@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20Minimal} from "./interfaces/IERC20Minimal.sol";
-import {IPulseMarketAdapter} from "./interfaces/IPulseMarketAdapter.sol";
-import {ISomniaEventHandler} from "./interfaces/ISomniaEventHandler.sol";
+import { IERC20Minimal } from "./interfaces/IERC20Minimal.sol";
+import { IPulseMarketAdapter } from "./interfaces/IPulseMarketAdapter.sol";
+import { ISomniaEventHandler } from "./interfaces/ISomniaEventHandler.sol";
 
 contract PulseSession is ISomniaEventHandler {
     enum Rule {
@@ -19,7 +19,8 @@ contract PulseSession is ISomniaEventHandler {
         Rule rule;
     }
 
-    address public constant SOMNIA_REACTIVITY_PRECOMPILE = 0x0000000000000000000000000000000000000100;
+    address public constant SOMNIA_REACTIVITY_PRECOMPILE =
+        0x0000000000000000000000000000000000000100;
 
     address public owner;
     IERC20Minimal public collateral;
@@ -35,7 +36,9 @@ contract PulseSession is ISomniaEventHandler {
 
     bool private locked;
 
-    event Initialized(address indexed owner, address indexed collateral, address indexed marketAdapter);
+    event Initialized(
+        address indexed owner, address indexed collateral, address indexed marketAdapter
+    );
     event Deposited(address indexed owner, uint256 amount);
     event Placed(bytes32 indexed marketId, uint8 side, uint256 stake, bytes32 orderId);
     event Redeemed(bytes32 indexed marketId, uint256 credited);
@@ -76,8 +79,13 @@ contract PulseSession is ISomniaEventHandler {
         bytes32[] calldata allowedMarketIds
     ) external {
         if (initialized) revert AlreadyInitialized();
-        if (owner_ == address(0) || collateral_ == address(0) || marketAdapter_ == address(0)) revert InvalidAddress();
-        if (policy_.maxStakePerWindow == 0 || policy_.maxWindows == 0 || policy_.expiry <= block.timestamp) {
+        if (owner_ == address(0) || collateral_ == address(0) || marketAdapter_ == address(0)) {
+            revert InvalidAddress();
+        }
+        if (
+            policy_.maxStakePerWindow == 0 || policy_.maxWindows == 0
+                || policy_.expiry <= block.timestamp
+        ) {
             revert InvalidPolicy();
         }
 
@@ -100,7 +108,12 @@ contract PulseSession is ISomniaEventHandler {
         emit Deposited(msg.sender, amount);
     }
 
-    function place(bytes32 marketId, uint8 side, uint256 stake) external onlyOwner nonReentrant returns (bytes32 orderId) {
+    function place(bytes32 marketId, uint8 side, uint256 stake)
+        external
+        onlyOwner
+        nonReentrant
+        returns (bytes32 orderId)
+    {
         _checkPlace(marketId, stake);
 
         collateral.approve(address(marketAdapter), stake);
@@ -145,7 +158,9 @@ contract PulseSession is ISomniaEventHandler {
         if (stake > policy.maxStakePerWindow) revert StakeTooHigh(stake, policy.maxStakePerWindow);
         if (block.timestamp > policy.expiry) revert SessionExpired();
         if (windowsUsed >= policy.maxWindows) revert WindowLimitReached();
-        if (marketAdapter.status(marketId) != IPulseMarketAdapter.MarketStatus.Trading) revert MarketNotTrading(marketId);
+        if (marketAdapter.status(marketId) != IPulseMarketAdapter.MarketStatus.Trading) {
+            revert MarketNotTrading(marketId);
+        }
     }
 
     function _trackMarket(bytes32 marketId) internal {

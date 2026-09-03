@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {SomniaBinaryAdapter} from "../contracts/SomniaBinaryAdapter.sol";
-import {IERC20Minimal} from "../contracts/interfaces/IERC20Minimal.sol";
-import {IPulseMarketAdapter} from "../contracts/interfaces/IPulseMarketAdapter.sol";
-import {ISomniaBinaryModule} from "../contracts/interfaces/ISomniaBinaryModule.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
-import {MockERC6909} from "./mocks/MockERC6909.sol";
-import {MockSomniaBinaryMarket} from "./mocks/MockSomniaBinaryMarket.sol";
-import {MockSomniaBinaryModule} from "./mocks/MockSomniaBinaryModule.sol";
-import {MockSomniaBinaryPool} from "./mocks/MockSomniaBinaryPool.sol";
+import { Test } from "forge-std/Test.sol";
+import { SomniaBinaryAdapter } from "../contracts/SomniaBinaryAdapter.sol";
+import { IERC20Minimal } from "../contracts/interfaces/IERC20Minimal.sol";
+import { IPulseMarketAdapter } from "../contracts/interfaces/IPulseMarketAdapter.sol";
+import { ISomniaBinaryModule } from "../contracts/interfaces/ISomniaBinaryModule.sol";
+import { MockERC20 } from "./mocks/MockERC20.sol";
+import { MockERC6909 } from "./mocks/MockERC6909.sol";
+import { MockSomniaBinaryMarket } from "./mocks/MockSomniaBinaryMarket.sol";
+import { MockSomniaBinaryModule } from "./mocks/MockSomniaBinaryModule.sol";
+import { MockSomniaBinaryPool } from "./mocks/MockSomniaBinaryPool.sol";
 
 contract SomniaBinaryAdapterTest is Test {
     address internal session = address(0x515510);
@@ -30,8 +30,11 @@ contract SomniaBinaryAdapterTest is Test {
         outcomeToken = new MockERC6909();
         market = new MockSomniaBinaryMarket();
         module = new MockSomniaBinaryModule(IERC20Minimal(address(collateral)), outcomeToken);
-        pool = new MockSomniaBinaryPool(IERC20Minimal(address(collateral)), outcomeToken, yesId, noId);
-        adapter = new SomniaBinaryAdapter(address(module), address(collateral), address(outcomeToken), 990_000, 990_000);
+        pool =
+            new MockSomniaBinaryPool(IERC20Minimal(address(collateral)), outcomeToken, yesId, noId);
+        adapter = new SomniaBinaryAdapter(
+            address(module), address(collateral), address(outcomeToken), 990_000, 990_000
+        );
 
         module.setMarket(marketId, _record());
 

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {Test} from "forge-std/Test.sol";
-import {PulseSession} from "../contracts/PulseSession.sol";
-import {PulseSessionFactory} from "../contracts/PulseSessionFactory.sol";
-import {IERC20Minimal} from "../contracts/interfaces/IERC20Minimal.sol";
-import {IPulseMarketAdapter} from "../contracts/interfaces/IPulseMarketAdapter.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
-import {MockMarketAdapter} from "./mocks/MockMarketAdapter.sol";
+import { Test } from "forge-std/Test.sol";
+import { PulseSession } from "../contracts/PulseSession.sol";
+import { PulseSessionFactory } from "../contracts/PulseSessionFactory.sol";
+import { IERC20Minimal } from "../contracts/interfaces/IERC20Minimal.sol";
+import { IPulseMarketAdapter } from "../contracts/interfaces/IPulseMarketAdapter.sol";
+import { MockERC20 } from "./mocks/MockERC20.sol";
+import { MockMarketAdapter } from "./mocks/MockMarketAdapter.sol";
 
 contract PulseSessionTest is Test {
     address internal owner = address(0xA11CE);
@@ -77,7 +77,9 @@ contract PulseSessionTest is Test {
         bytes32 unknownMarket = keccak256("BTC-15m-unknown");
 
         vm.prank(owner);
-        vm.expectRevert(abi.encodeWithSelector(PulseSession.MarketNotAllowed.selector, unknownMarket));
+        vm.expectRevert(
+            abi.encodeWithSelector(PulseSession.MarketNotAllowed.selector, unknownMarket)
+        );
         session.place(unknownMarket, 0, 10e6);
     }
 

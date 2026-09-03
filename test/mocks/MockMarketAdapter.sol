@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20Minimal} from "../../contracts/interfaces/IERC20Minimal.sol";
-import {IPulseMarketAdapter} from "../../contracts/interfaces/IPulseMarketAdapter.sol";
+import { IERC20Minimal } from "../../contracts/interfaces/IERC20Minimal.sol";
+import { IPulseMarketAdapter } from "../../contracts/interfaces/IPulseMarketAdapter.sol";
 
 contract MockMarketAdapter is IPulseMarketAdapter {
     IERC20Minimal public immutable collateral;
@@ -31,7 +31,10 @@ contract MockMarketAdapter is IPulseMarketAdapter {
         return statuses[marketId];
     }
 
-    function place(bytes32 marketId, uint8, uint256 stake, address) external returns (bytes32 orderId) {
+    function place(bytes32 marketId, uint8, uint256 stake, address)
+        external
+        returns (bytes32 orderId)
+    {
         collateral.transferFrom(msg.sender, address(this), stake);
         orderId = keccak256(abi.encode(marketId, msg.sender, stake, block.number));
     }

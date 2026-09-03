@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {PulseSession} from "./PulseSession.sol";
+import { PulseSession } from "./PulseSession.sol";
 
 contract PulseSessionFactory {
     address public immutable implementation;
@@ -24,14 +24,15 @@ contract PulseSessionFactory {
         marketAdapter = marketAdapter_;
     }
 
-    function createSession(
-        PulseSession.Policy calldata policy,
-        bytes32[] calldata allowedMarketIds
-    ) external returns (address session) {
+    function createSession(PulseSession.Policy calldata policy, bytes32[] calldata allowedMarketIds)
+        external
+        returns (address session)
+    {
         if (sessionOf[msg.sender] != address(0)) revert SessionAlreadyExists(msg.sender);
 
         session = _clone(implementation);
-        PulseSession(session).initialize(msg.sender, collateral, marketAdapter, policy, allowedMarketIds);
+        PulseSession(session)
+            .initialize(msg.sender, collateral, marketAdapter, policy, allowedMarketIds);
         sessionOf[msg.sender] = session;
 
         emit SessionCreated(msg.sender, session);
@@ -44,7 +45,10 @@ contract PulseSessionFactory {
             let ptr := mload(0x40)
             mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)
             mstore(add(ptr, 0x14), targetBytes)
-            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)
+            mstore(
+                add(ptr, 0x28),
+                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000
+            )
             clone := create(0, ptr, 0x37)
         }
 

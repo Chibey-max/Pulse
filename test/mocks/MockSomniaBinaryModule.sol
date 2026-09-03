@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import {IERC20Minimal} from "../../contracts/interfaces/IERC20Minimal.sol";
-import {ISomniaBinaryModule} from "../../contracts/interfaces/ISomniaBinaryModule.sol";
-import {MockERC6909} from "./MockERC6909.sol";
+import { IERC20Minimal } from "../../contracts/interfaces/IERC20Minimal.sol";
+import { ISomniaBinaryModule } from "../../contracts/interfaces/ISomniaBinaryModule.sol";
+import { MockERC6909 } from "./MockERC6909.sol";
 
 contract MockSomniaBinaryModule is ISomniaBinaryModule {
     IERC20Minimal public immutable collateral;
@@ -29,13 +29,7 @@ contract MockSomniaBinaryModule is ISomniaBinaryModule {
         return records[marketId];
     }
 
-    function redeem(
-        uint32,
-        bytes32,
-        bytes32 marketId,
-        uint8 outcomeIdx,
-        uint256 amount
-    ) external {
+    function redeem(uint32, bytes32, bytes32 marketId, uint8 outcomeIdx, uint256 amount) external {
         require(!failRedeem[marketId][outcomeIdx], "REDEEM_FAILED");
 
         MarketRecord memory record = records[marketId];
