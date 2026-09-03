@@ -6,8 +6,7 @@ import { ActivityTape } from "@/components/app";
 // === Component
 
 /*
-  Deep-link context: the tape for this one window sits beside the decision card. The tape
-  itself filters nothing yet in mock; the full app filters by marketId.
+  Deep-link context: the wallet's live activity tape sits beside the decision card.
 */
 export function MarketActivity({ marketId }: { marketId: string }) {
   return (

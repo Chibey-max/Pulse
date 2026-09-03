@@ -7,16 +7,15 @@ import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import { pulseSessionAbi, pulseSessionFactoryAbi, toContractPolicy } from "@/lib/session";
 import type { SessionPolicyInput } from "@/lib/types";
-import { IS_MOCK, SESSION_FACTORY_ADDRESS } from "./config";
+import { SESSION_FACTORY_ADDRESS } from "./config";
 import { useCollateralAddress, useCollateralDecimals } from "./collateral";
 
 /*
   Write layer over PulseSessionFactory + PulseSession. createSession is a three-signature
-  flow (approve the factory -> createSession -> deposit into the returned vault) run as a
+  flow (createSession -> approve the returned session -> deposit into that vault) run as a
   linear async state machine: each step awaits its receipt before the next. When the
-  factory is absent or the app is in mock mode every action returns early and
-  status.unavailable is true, so components render the not-deployed state instead of
-  faking a transaction.
+  factory is absent every action returns early and status.unavailable is true, so
+  components render the not-deployed state instead of faking a transaction.
 */
 
 // === Constants
@@ -30,7 +29,7 @@ export type SessionActionPhase =
 
 export interface SessionActionStatus {
   phase: SessionActionPhase;
-  /* True when this environment has no deployed factory (or is mock): actions no-op. */
+  /* True when this environment has no deployed factory: actions no-op. */
   unavailable: boolean;
   error?: string;
   hash?: `0x${string}`;
@@ -54,7 +53,7 @@ export function useSessionActions(): SessionActions {
   const queryClient = useQueryClient();
   const { writeContractAsync } = useWriteContract();
 
-  const unavailable: boolean = !SESSION_FACTORY_ADDRESS || IS_MOCK;
+  const unavailable: boolean = !SESSION_FACTORY_ADDRESS;
 
   const [phase, setPhase] = useState<SessionActionPhase>("idle");
   const [error, setError] = useState<string | undefined>(undefined);
@@ -99,14 +98,6 @@ export function useSessionActions(): SessionActions {
           setError(undefined);
           const deposit = parseUnits(String(initialDeposit), decimals);
 
-          setPhase("approving");
-          await send({
-            address: token,
-            abi: erc20Abi,
-            functionName: "approve",
-            args: [factory, deposit],
-          });
-
           setPhase("creating");
           await send({
             address: factory,
@@ -118,6 +109,14 @@ export function useSessionActions(): SessionActions {
           const session = await readSessionAddress();
           if (!session) throw new Error("Session address not found after creation");
 
+          setPhase("approving");
+          await send({
+            address: token,
+            abi: erc20Abi,
+            functionName: "approve",
+            args: [session, deposit],
+          });
+
           setPhase("depositing");
           await send({
             address: session,
@@ -128,6 +127,8 @@ export function useSessionActions(): SessionActions {
 
           setPhase("done");
           void queryClient.invalidateQueries({ queryKey: ["session", owner] });
+          void queryClient.invalidateQueries({ queryKey: ["positions", owner] });
+          void queryClient.invalidateQueries({ queryKey: ["tape", owner] });
         } catch (err) {
           fail(err);
         }
@@ -153,6 +154,8 @@ export function useSessionActions(): SessionActions {
           await run(session);
           setPhase("done");
           void queryClient.invalidateQueries({ queryKey: ["session", owner] });
+          void queryClient.invalidateQueries({ queryKey: ["positions", owner] });
+          void queryClient.invalidateQueries({ queryKey: ["tape", owner] });
         } catch (err) {
           fail(err);
         }

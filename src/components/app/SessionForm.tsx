@@ -7,6 +7,7 @@ import type { PulsePair, PulseWindow, SessionPolicyInput, SessionRule } from "@/
 import { Card, CtaButton } from "@/components/ui";
 import { FaucetCard } from "@/components/app/FaucetCard";
 import { useCollateralDecimals } from "@/lib/app-data/collateral";
+import { useMarkets } from "@/lib/app-data";
 import { useSessionActions } from "@/lib/app-data/session-writes";
 import { formatAmount } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -56,12 +57,18 @@ export function SessionForm() {
     rule: "stop-on-loss",
     expiryHours: 2,
   });
-  const [sampleShown, setSampleShown] = useState<boolean>(false);
   const decimals = useCollateralDecimals();
   const { createSession, status } = useSessionActions();
+  const { data: markets } = useMarkets();
 
-  /* No factory / mock: keep the illustrative "Sample:" affordance, deploy nothing. */
+  /* No factory: render an honest unavailable state, never a placeholder deploy action. */
   const fallback: boolean = status.unavailable;
+  const allowedMarketIds =
+    markets
+      ?.filter((market) => market.pair === policy.pair)
+      .filter((market) => market.window === policy.window)
+      .filter((market) => market.status === "listed" || market.status === "trading")
+      .map((market) => market.marketId) ?? [];
 
   useEffect(() => {
     if (status.phase === "done") router.push("/app");
@@ -74,8 +81,7 @@ export function SessionForm() {
       maxWindows: policy.windows,
       expiry: nowSeconds + policy.expiryHours * 3600,
       rule: policy.rule,
-      // TODO(live): let the form pick allowed markets once the factory + market registry are deployed
-      allowedMarketIds: [],
+      allowedMarketIds,
     };
     createSession(policyInput, policy.budget);
   }
@@ -96,6 +102,7 @@ export function SessionForm() {
     status.phase === "creating" ||
     status.phase === "depositing" ||
     status.phase === "done";
+  const deployDisabled: boolean = deployBusy || (!fallback && allowedMarketIds.length === 0);
 
   const ruleCopy = RULE_OPTIONS.find((option) => option.value === policy.rule)?.copy ?? "";
   const sentence = `${formatAmount(policy.budget, 0)} budget · ${formatAmount(
@@ -221,11 +228,11 @@ export function SessionForm() {
         </p>
         <div className="flex flex-wrap items-center gap-3">
           {fallback ? (
-            <CtaButton variant="primary" onClick={() => setSampleShown(true)}>
-              {sampleShown ? "Sample: session would deploy" : "Deploy and fund session"}
+            <CtaButton variant="primary" disabled>
+              Session factory unavailable
             </CtaButton>
           ) : (
-            <CtaButton variant="primary" onClick={handleDeploy} disabled={deployBusy}>
+            <CtaButton variant="primary" onClick={handleDeploy} disabled={deployDisabled}>
               {deployLabel}
             </CtaButton>
           )}
@@ -236,11 +243,16 @@ export function SessionForm() {
 
         {fallback ? (
           <p className="text-micro text-text-muted font-mono">
-            Session contracts are not deployed on this environment yet.
+            Live session contracts are not configured for this environment.
           </p>
         ) : status.phase !== "idle" ? (
           <p className="text-micro text-text-secondary font-mono">
             {status.phase === "done" ? "Session funded. Redirecting…" : deployLabel}
+          </p>
+        ) : allowedMarketIds.length === 0 ? (
+          <p className="text-micro text-down font-mono">
+            No live {policy.pair} {policy.window} windows are available yet. Pick another pair or
+            window.
           </p>
         ) : null}
         {status.error ? <p className="text-micro text-down font-mono">{status.error}</p> : null}

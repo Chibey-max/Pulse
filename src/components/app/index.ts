@@ -5,7 +5,6 @@ export { FaucetCard } from "./FaucetCard";
 export { HeroCard, type HeroCardProps } from "./HeroCard";
 export { MarketTile } from "./MarketTile";
 export { MiniBook } from "./MiniBook";
-export { MockBanner } from "./MockBanner";
 export { PositionsList } from "./PositionsList";
 export { SessionCard } from "./SessionCard";
 export { SessionForm } from "./SessionForm";

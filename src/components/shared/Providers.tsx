@@ -7,8 +7,8 @@ import { wagmiConfig } from "@/lib/wagmi";
 import { Toaster } from "@/components/ui/toast";
 
 /*
-  App route group only. Owns the wallet stack (wagmi) and the query client used for
-  market and book polling, so the marketing bundle never pulls either in.
+  Shared live-data provider. Marketing uses it for live window cards, while app routes
+  also use the wallet stack for writes.
 
   The QueryClient is created once per client mount via useState, not module scope, so a
   server render and a client render never share one instance.

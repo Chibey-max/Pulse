@@ -3,6 +3,7 @@ import { createPublicClient, erc20Abi, http, type Address, type Chain } from "vi
 
 export const SOMNIA_SHANNON_CHAIN_ID = 50312;
 export const SOMNIA_MAINNET_CHAIN_ID = 5031;
+export const SOMNIA_SHANNON_RPC_URL = "https://api.infra.testnet.somnia.network";
 export const SOMNIA_REACTIVITY_PRECOMPILE = "0x0000000000000000000000000000000000000100" as const;
 
 export const COLLATERAL_BY_CHAIN = {
@@ -40,11 +41,9 @@ export function getTxUrl(hash: `0x${string}`): string {
   return `${getExplorerUrl().replace(/\/$/, "")}/tx/${hash}`;
 }
 
-export async function readCollateralDecimals(rpcUrl = process.env.NEXT_PUBLIC_RPC_URL) {
-  if (!rpcUrl) {
-    throw new Error("NEXT_PUBLIC_RPC_URL is required to read collateral decimals");
-  }
-
+export async function readCollateralDecimals(
+  rpcUrl = process.env.NEXT_PUBLIC_RPC_URL ?? SOMNIA_SHANNON_RPC_URL,
+) {
   const chain = getPulseChain();
   const collateral = getCollateral(chain.id);
   const publicClient = createPublicClient({

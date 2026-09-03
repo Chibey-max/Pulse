@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Section, SectionHeading } from "@/components/ui";
-import { MockBanner, SessionForm } from "@/components/app";
+import { SessionForm } from "@/components/app";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -19,7 +19,6 @@ export default function NewSessionPage() {
           title="Open a session"
           description="Set a budget and hard limits. The contract enforces them. One confirm deploys and funds the session."
         />
-        <MockBanner />
         <SessionForm />
       </div>
     </Section>

@@ -1,13 +1,10 @@
 import { Reveal, Section } from "@/components/ui";
-import { FaucetCard, HeroCard, MockBanner, SessionCard, TapeSummary } from "@/components/app";
+import { FaucetCard, HeroCard, SessionCard, TapeSummary } from "@/components/app";
 
 export default function AppHomePage() {
   return (
     <Section id="app-home" spacing="tight" label="Pulse trading home">
       <Reveal stagger tight className="flex flex-col gap-6">
-        <Reveal child>
-          <MockBanner />
-        </Reveal>
         {/* Renders itself only when the connected wallet holds no tUSDC. */}
         <Reveal child>
           <FaucetCard />

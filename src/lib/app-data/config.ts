@@ -1,15 +1,9 @@
-/*
-  The app runs against mock data unless it is explicitly turned off AND the live endpoints
-  are configured. The PRD sanctions NEXT_PUBLIC_MOCK for UI work (section 11.7); it must
-  never ship enabled. Mock rows are always labelled as sample in the UI.
-*/
+export const DEFAULT_SESSION_FACTORY_ADDRESS =
+  "0xa34c19019d6958F2a331322eb84C0923abc52486" as const;
+export const DEFAULT_MARKET_ADAPTER_ADDRESS = "0x6551503d37f739494534f51D5Bbcb3f90077D4f2" as const;
 
-const explicitlyLive = process.env.NEXT_PUBLIC_MOCK === "0";
+export const SESSION_FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_SESSION_FACTORY ??
+  DEFAULT_SESSION_FACTORY_ADDRESS) as `0x${string}`;
 
-const hasLiveEndpoints =
-  Boolean(process.env.NEXT_PUBLIC_INDEXER_URL) && Boolean(process.env.NEXT_PUBLIC_WS_RPC_URL);
-
-export const IS_MOCK = !explicitlyLive || !hasLiveEndpoints;
-
-export const SESSION_FACTORY_ADDRESS = process.env.NEXT_PUBLIC_SESSION_FACTORY as
-  `0x${string}` | undefined;
+export const MARKET_ADAPTER_ADDRESS = (process.env.NEXT_PUBLIC_MARKET_ADAPTER ??
+  DEFAULT_MARKET_ADAPTER_ADDRESS) as `0x${string}`;

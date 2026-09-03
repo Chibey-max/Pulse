@@ -11,6 +11,12 @@ import type { WalletClient } from "viem";
 import { getPulseChain, SOMNIA_MAINNET_CHAIN_ID } from "./chain";
 import type { CallSide, MarketCard, PulsePair, PulseWindow, WindowStatus } from "./types";
 
+export const SOMNIA_TESTNET_INDEXER_URL = "https://dev.smk.somnia.host/v1/graphql";
+export const SOMNIA_TESTNET_WS_RPC_URL = "wss://api.infra.testnet.somnia.network/ws";
+
+const PUBLIC_INDEXER_URL = process.env.NEXT_PUBLIC_INDEXER_URL ?? SOMNIA_TESTNET_INDEXER_URL;
+const PUBLIC_WS_RPC_URL = process.env.NEXT_PUBLIC_WS_RPC_URL ?? SOMNIA_TESTNET_WS_RPC_URL;
+
 type PulseMarketFilters = {
   pair?: PulsePair;
   window?: PulseWindow;
@@ -22,8 +28,8 @@ export function createPulseExchange(walletClient?: WalletClient) {
     chain,
     addresses:
       chain.id === SOMNIA_MAINNET_CHAIN_ID ? SOMNIA_MAINNET_ADDRESSES : SOMNIA_TESTNET_ADDRESSES,
-    indexerUrl: requiredPublicEnv("NEXT_PUBLIC_INDEXER_URL"),
-    wsRpcUrl: requiredPublicEnv("NEXT_PUBLIC_WS_RPC_URL"),
+    indexerUrl: PUBLIC_INDEXER_URL,
+    wsRpcUrl: PUBLIC_WS_RPC_URL,
     walletClient,
   };
 
@@ -273,15 +279,6 @@ function normalizeStatus(status: string, tradingStart?: number, expiry?: number)
   if (tradingStart && expiry && now >= tradingStart && now < expiry) return "trading";
   if (expiry && now >= expiry) return "locked";
   return "listed";
-}
-
-function requiredPublicEnv(name: "NEXT_PUBLIC_INDEXER_URL" | "NEXT_PUBLIC_WS_RPC_URL") {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} is required to create a Pulse exchange`);
-  }
-
-  return value;
 }
 
 function isSupportedMarket(market: MarketCard, filters: PulseMarketFilters) {

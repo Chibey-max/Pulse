@@ -60,14 +60,13 @@ src/components/shared/ Navbar, NavigationBar, Footer, AmbientBackground, ThemeTo
 src/components/marketing/  landing sections (Hero, PulseTimeline, ...)
 src/components/app/    HeroCard, ActionRow, MiniBook, SessionCard, ActivityTape, ...
 src/lib/               design tokens live in app/globals.css; cn, seo, nav, faqs, motion/
-src/lib/app-data/      TanStack Query hooks over a data source (mock by default)
+src/lib/app-data/      TanStack Query hooks over the live Somnia testnet data source
 ```
 
 - Design tokens (colour, spacing, type scale) are defined once in `src/app/globals.css`
   under `@theme`, with light and dark values. Call sites use tokens, not raw values.
-- The app reads **sample data** unless `NEXT_PUBLIC_MOCK=0` and the indexer/WS endpoints
-  are set. The live SDK path is stubbed in `src/lib/app-data/source.ts` pending the
-  deployed factory and real endpoints; every screen already handles loading/empty/error.
+- The app is live-only on Somnia Shannon. It reads live markets/books/portfolio
+  data from the SDK + indexer and session state from the deployed Pulse contracts.
 - Wallet connect is a small custom control over `wagmi` (no RainbowKit), in
   `src/components/shared/WalletButton.tsx`.
 

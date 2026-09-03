@@ -81,5 +81,3 @@ export function useSession() {
     refetchInterval: 8_000,
   });
 }
-
-export const IS_MOCK_DATA = source.isMock;

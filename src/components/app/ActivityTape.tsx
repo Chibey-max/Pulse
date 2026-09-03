@@ -7,6 +7,7 @@ import { useActivity } from "@/lib/app-data";
 import { StateNotice, Skeleton } from "@/components/app/StateNotice";
 import { listItem } from "@/lib/motion";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { getTxUrl } from "@/lib/chain";
 import { formatLocalTime, truncateHex } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -50,7 +51,9 @@ function Row({ entry }: { entry: TapeEntry }) {
         </span>
       </div>
       <a
-        href="#"
+        href={getTxUrl(entry.txHash)}
+        target="_blank"
+        rel="noreferrer"
         className="text-micro font-mono-numbers text-text-secondary hover:text-signal flex items-center gap-1 font-mono transition-colors"
       >
         {truncateHex(entry.txHash)}

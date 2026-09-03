@@ -11,8 +11,6 @@ export interface CountdownProps {
   expiryTs: number;
   /* `hero` is the oversized primary object; `inline` is a compact label. */
   size?: "hero" | "inline";
-  /* Render this fixed string instead of a live tick (marketing sample content). */
-  staticValue?: string;
   className?: string;
 }
 
@@ -25,21 +23,14 @@ export interface CountdownProps {
   Server and first client render both show a stable placeholder; the live tick only
   starts after hydration, so a clock-derived value can never hydration-mismatch.
 */
-export function Countdown({ expiryTs, size = "inline", staticValue, className }: CountdownProps) {
+export function Countdown({ expiryTs, size = "inline", className }: CountdownProps) {
   const hydrated = useHydrated();
   const live = useCountdown(expiryTs);
 
-  const isStatic = Boolean(staticValue);
-  const label = isStatic
-    ? (staticValue as string)
-    : hydrated
-      ? live.expired
-        ? "00:00"
-        : live.label
-      : "--:--";
+  const label = hydrated ? (live.expired ? "00:00" : live.label) : "--:--";
 
-  const urgent = !isStatic && hydrated && live.urgent;
-  const ticking = !isStatic && hydrated && !live.expired && size === "hero";
+  const urgent = hydrated && live.urgent;
+  const ticking = hydrated && !live.expired && size === "hero";
 
   return (
     <span

@@ -1,7 +1,6 @@
 import { CtaLink, Reveal, Section } from "@/components/ui";
-import { WindowCard } from "@/components/marketing/WindowCard";
+import { LiveWindowCard } from "@/components/marketing/LiveWindowCard";
 import { scaleIn } from "@/lib/motion";
-import { SAMPLE_WINDOW } from "@/lib/sample";
 import { SITE } from "@/lib/seo";
 
 // === Component
@@ -50,7 +49,7 @@ export function Hero() {
         </Reveal>
 
         <Reveal variants={scaleIn} amount={0.2}>
-          <WindowCard market={SAMPLE_WINDOW} sample />
+          <LiveWindowCard />
         </Reveal>
       </div>
     </Section>

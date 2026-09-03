@@ -5,8 +5,6 @@ import { Card, Countdown, StatusChip, TiltCard } from "@/components/ui";
 
 export interface WindowCardProps {
   market: MarketCard;
-  /* Renders the "Sample data" ribbon and disables the action row. */
-  sample?: boolean;
   className?: string;
 }
 
@@ -17,7 +15,7 @@ export interface WindowCardProps {
   app route renders an interactive version of the same shape. Up probability is the
   book; Down is always 1 - Up, derived, never a second feed.
 */
-export function WindowCard({ market, sample = false, className }: WindowCardProps) {
+export function WindowCard({ market, className }: WindowCardProps) {
   const up = market.upPrice ?? 0;
   const down = market.downPrice ?? 1 - up;
 
@@ -29,11 +27,6 @@ export function WindowCard({ market, sample = false, className }: WindowCardProp
             <span className="text-caption text-text-secondary font-mono tracking-wider uppercase">
               {market.pair} · {market.window}
             </span>
-            {sample ? (
-              <span className="text-micro text-text-muted font-mono tracking-wider uppercase">
-                Sample data
-              </span>
-            ) : null}
           </div>
           <StatusChip status={market.status} />
         </div>
@@ -42,11 +35,7 @@ export function WindowCard({ market, sample = false, className }: WindowCardProp
           <span className="text-micro text-text-muted font-mono tracking-wider uppercase">
             Resolves in
           </span>
-          <Countdown
-            expiryTs={market.expiryTs}
-            size="hero"
-            staticValue={sample ? "08:42" : undefined}
-          />
+          <Countdown expiryTs={market.expiryTs} size="hero" />
         </div>
 
         <dl className="grid grid-cols-2 gap-3">
@@ -70,7 +59,7 @@ export function WindowCard({ market, sample = false, className }: WindowCardProp
           </div>
         </dl>
 
-        <div className="grid grid-cols-2 gap-3" aria-hidden={sample}>
+        <div className="grid grid-cols-2 gap-3">
           <span className="rounded-pill bg-up/12 text-up flex h-11 items-center justify-center font-medium">
             Call Up
           </span>

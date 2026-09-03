@@ -1,13 +1,31 @@
-import { Card, Section, SectionHeading } from "@/components/ui";
-import { SAMPLE_SESSION } from "@/lib/sample";
+import { Card, CtaLink, Section, SectionHeading } from "@/components/ui";
+import { SOMNIA_REACTIVITY_PRECOMPILE, getCollateral } from "@/lib/chain";
+import { MARKET_ADAPTER_ADDRESS, SESSION_FACTORY_ADDRESS } from "@/lib/app-data/config";
+import { truncateHex } from "@/lib/format";
 
 // === Data
 
 const FIELDS = [
-  { label: "Budget", value: `${SAMPLE_SESSION.budget} tUSDC`, note: "Absolute maximum loss" },
-  { label: "Max per window", value: `${SAMPLE_SESSION.maxPerWindow} tUSDC`, note: "Reverts above" },
-  { label: "Windows", value: `${SAMPLE_SESSION.windows}`, note: "Then autopilot disarms" },
-  { label: "Rule", value: SAMPLE_SESSION.rule, note: "Deterministic, stated in plain words" },
+  {
+    label: "Factory",
+    value: truncateHex(SESSION_FACTORY_ADDRESS),
+    note: "Creates one session per wallet",
+  },
+  {
+    label: "Adapter",
+    value: truncateHex(MARKET_ADAPTER_ADDRESS),
+    note: "Routes calls into Event Contracts",
+  },
+  {
+    label: "Collateral",
+    value: getCollateral().symbol,
+    note: "Funded and withdrawn onchain",
+  },
+  {
+    label: "Reactivity",
+    value: truncateHex(SOMNIA_REACTIVITY_PRECOMPILE),
+    note: "Settlement callback caller",
+  },
 ] as const;
 
 // === Component
@@ -29,9 +47,8 @@ export function SessionPolicySection() {
 
         <Card className="flex flex-col gap-4 p-6">
           <p className="text-caption text-text-secondary font-mono">
-            {SAMPLE_SESSION.budget} budget · {SAMPLE_SESSION.maxPerWindow} max per window ·{" "}
-            {SAMPLE_SESSION.windows} {SAMPLE_SESSION.pair} windows ·{" "}
-            {SAMPLE_SESSION.rule.toLowerCase()}
+            The values you choose in the live session form are encoded into the session policy and
+            enforced by the deployed contract.
           </p>
           <dl className="grid gap-3 sm:grid-cols-2">
             {FIELDS.map((field) => (
@@ -49,9 +66,9 @@ export function SessionPolicySection() {
               </div>
             ))}
           </dl>
-          <p className="text-micro text-text-muted font-mono tracking-wider uppercase">
-            Sample policy · not live performance
-          </p>
+          <CtaLink href="/session/new" variant="secondary">
+            Configure a live session
+          </CtaLink>
         </Card>
       </div>
     </Section>

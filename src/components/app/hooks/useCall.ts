@@ -1,12 +1,16 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useWalletClient } from "wagmi";
+import { parseUnits } from "viem";
+import { useAccount, useConfig, useWalletClient, useWriteContract } from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { UnifiedOrder } from "@somnia-chain/markets-sdk";
 import { useToast } from "@/components/ui/toast";
-import { IS_MOCK } from "@/lib/app-data";
+import { useSession } from "@/lib/app-data";
+import { useCollateralDecimals } from "@/lib/app-data/collateral";
 import { placeCall } from "@/lib/app-data/writes";
+import { pulseSessionAbi } from "@/lib/session";
 import { getTxUrl } from "@/lib/chain";
 import { decodeTxError } from "@/lib/tx";
 import { formatAmount } from "@/lib/format";
@@ -26,8 +30,6 @@ interface CallOutcome {
   description: string;
   variant: "success" | "info";
 }
-
-const MOCK_MESSAGE = "Live trading needs NEXT_PUBLIC_MOCK=0 and configured endpoints.";
 
 // === Helpers
 
@@ -60,17 +62,18 @@ function summarizeFill(order: UnifiedOrder): CallOutcome {
 // === Hook
 
 export function useCall(market: MarketCard | undefined): UseCall {
+  const config = useConfig();
+  const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const { data: session } = useSession();
+  const decimals = useCollateralDecimals();
+  const { writeContractAsync } = useWriteContract();
   const { show, update } = useToast();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<CallStatus>("idle");
 
   const call = useCallback(
     async (side: CallSide, stake: number): Promise<void> => {
-      if (IS_MOCK) {
-        show({ title: "Sample mode", description: MOCK_MESSAGE, variant: "info" });
-        return;
-      }
       if (!walletClient) {
         show({
           title: "Connect a wallet",
@@ -89,6 +92,31 @@ export function useCall(market: MarketCard | undefined): UseCall {
       });
 
       try {
+        if (session) {
+          const txHash = await writeContractAsync({
+            address: session.address,
+            abi: pulseSessionAbi,
+            functionName: "place",
+            args: [market.marketId, side === "up" ? 0 : 1, parseUnits(String(stake), decimals)],
+          });
+          await waitForTransactionReceipt(config, { hash: txHash });
+
+          update(toastId, {
+            title: "Session call submitted",
+            description: "Your policy enforced the call from the funded session.",
+            variant: "success",
+            action: { label: "View transaction", href: getTxUrl(txHash) },
+            duration: 6_000,
+          });
+          setStatus("success");
+
+          queryClient.invalidateQueries({ queryKey: ["session", address] });
+          queryClient.invalidateQueries({ queryKey: ["positions", address] });
+          queryClient.invalidateQueries({ queryKey: ["tape", address] });
+          queryClient.invalidateQueries({ queryKey: ["book", market.marketId] });
+          return;
+        }
+
         const order = await placeCall(walletClient, market, side, stake);
         const outcome = summarizeFill(order);
         const txHash = order.txHash;
@@ -104,7 +132,7 @@ export function useCall(market: MarketCard | undefined): UseCall {
         });
         setStatus("success");
 
-        queryClient.invalidateQueries({ queryKey: ["positions"] });
+        queryClient.invalidateQueries({ queryKey: ["positions", address] });
         queryClient.invalidateQueries({ queryKey: ["book", market.marketId] });
       } catch (error) {
         update(toastId, {
@@ -116,7 +144,18 @@ export function useCall(market: MarketCard | undefined): UseCall {
         setStatus("error");
       }
     },
-    [walletClient, market, show, update, queryClient],
+    [
+      walletClient,
+      market,
+      session,
+      writeContractAsync,
+      decimals,
+      config,
+      address,
+      show,
+      update,
+      queryClient,
+    ],
   );
 
   return { call, status };

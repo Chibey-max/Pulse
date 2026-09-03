@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Card, Section, SectionHeading } from "@/components/ui";
-import { ActivityTape, MockBanner } from "@/components/app";
+import { ActivityTape } from "@/components/app";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -19,7 +19,6 @@ export default function ActivityPage() {
           title="Activity"
           description="Placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows required no signature."
         />
-        <MockBanner />
         <Card className="px-5">
           <ActivityTape />
         </Card>

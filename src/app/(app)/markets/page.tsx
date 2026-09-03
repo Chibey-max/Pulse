@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Section, SectionHeading } from "@/components/ui";
-import { MockBanner } from "@/components/app";
 import { MarketsGrid } from "./MarketsGrid";
 import { createMetadata } from "@/lib/seo";
 
@@ -20,7 +19,6 @@ export default function MarketsPage() {
           title="Live windows"
           description="Every BTC and ETH Up/Down window on 15m and 1h. Status and countdown lead."
         />
-        <MockBanner />
         <MarketsGrid />
       </div>
     </Section>

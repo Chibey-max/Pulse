@@ -10,8 +10,8 @@ export const contentType = "image/png";
 // === Image
 
 /*
-  Static brand card. Deliberately no product mockup or metrics — the marketing pages carry
-  the same discipline. Colours mirror the dark theme tokens.
+  Static brand card. Deliberately no product UI or metrics; live data belongs in
+  rendered pages. Colours mirror the dark theme tokens.
 */
 export default function OpengraphImage() {
   return new ImageResponse(

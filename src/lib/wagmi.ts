@@ -1,6 +1,7 @@
 import { somniaMainnet, somniaShannon } from "@somnia-chain/markets-sdk/chains";
 import { http, createConfig } from "wagmi";
 import { coinbaseWallet, injected, walletConnect } from "wagmi/connectors";
+import { SOMNIA_SHANNON_RPC_URL } from "@/lib/chain";
 import { SITE } from "@/lib/seo";
 
 /*
@@ -37,7 +38,7 @@ export const wagmiConfig = createConfig({
   chains: PULSE_CHAINS,
   connectors,
   transports: {
-    [somniaShannon.id]: http(process.env.NEXT_PUBLIC_RPC_URL),
+    [somniaShannon.id]: http(process.env.NEXT_PUBLIC_RPC_URL ?? SOMNIA_SHANNON_RPC_URL),
     [somniaMainnet.id]: http(),
   },
   ssr: true,

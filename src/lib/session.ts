@@ -6,7 +6,7 @@ import {
 import type { SomniaMarkets } from "@somnia-chain/markets-sdk";
 import type { Address, Hex, WalletClient } from "viem";
 import { SOMNIA_REACTIVITY_PRECOMPILE } from "./chain";
-import type { SessionPolicyInput } from "./types";
+import type { SessionPolicyInput, SessionRule } from "./types";
 
 export const pulseSessionFactoryAbi = [
   {
@@ -40,10 +40,54 @@ export const pulseSessionFactoryAbi = [
 export const pulseSessionAbi = [
   {
     type: "function",
+    name: "owner",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+  {
+    type: "function",
+    name: "policy",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [
+      { name: "maxStakePerWindow", type: "uint256" },
+      { name: "maxWindows", type: "uint32" },
+      { name: "expiry", type: "uint64" },
+      { name: "rule", type: "uint8" },
+    ],
+  },
+  {
+    type: "function",
+    name: "armed",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "windowsUsed",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint32" }],
+  },
+  {
+    type: "function",
     name: "deposit",
     stateMutability: "nonpayable",
     inputs: [{ name: "amount", type: "uint256" }],
     outputs: [],
+  },
+  {
+    type: "function",
+    name: "place",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "marketId", type: "bytes32" },
+      { name: "side", type: "uint8" },
+      { name: "stake", type: "uint256" },
+    ],
+    outputs: [{ name: "orderId", type: "bytes32" }],
   },
   {
     type: "function",
@@ -61,9 +105,28 @@ export const pulseSessionAbi = [
   },
 ] as const;
 
+export const pulseMarketAdapterAbi = [
+  {
+    type: "function",
+    name: "held",
+    stateMutability: "view",
+    inputs: [
+      { name: "session", type: "address" },
+      { name: "marketId", type: "bytes32" },
+      { name: "side", type: "uint8" },
+    ],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
 export function encodeRule(rule: SessionPolicyInput["rule"]) {
   if (rule === "stop-on-loss") return 2;
   return rule === "martingale-off" ? 1 : 0;
+}
+
+export function decodeRule(rule: number): SessionRule {
+  if (rule === 2) return "stop-on-loss";
+  return rule === 1 ? "martingale-off" : "hold";
 }
 
 export function toContractPolicy(policy: SessionPolicyInput) {

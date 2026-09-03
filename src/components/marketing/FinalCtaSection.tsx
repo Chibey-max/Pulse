@@ -1,6 +1,5 @@
 import { CtaLink, Section } from "@/components/ui";
-import { WindowCard } from "@/components/marketing/WindowCard";
-import { SAMPLE_WINDOW } from "@/lib/sample";
+import { LiveWindowCard } from "@/components/marketing/LiveWindowCard";
 
 // === Component
 
@@ -27,7 +26,7 @@ export function FinalCtaSection() {
             </CtaLink>
           </div>
         </div>
-        <WindowCard market={SAMPLE_WINDOW} sample />
+        <LiveWindowCard />
       </div>
     </Section>
   );

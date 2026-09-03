@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { useWalletClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
-import { IS_MOCK } from "@/lib/app-data";
 import type { Redeemable } from "@/lib/app-data";
 import { claimAll as claimAllWrite } from "@/lib/app-data/writes";
 import { getCollateral } from "@/lib/chain";
@@ -20,8 +19,6 @@ export interface UseClaimAll {
   status: ClaimStatus;
 }
 
-const MOCK_MESSAGE = "Live trading needs NEXT_PUBLIC_MOCK=0 and configured endpoints.";
-
 // === Hook
 
 export function useClaimAll(): UseClaimAll {
@@ -31,10 +28,6 @@ export function useClaimAll(): UseClaimAll {
   const [status, setStatus] = useState<ClaimStatus>("idle");
 
   const claimAll = useCallback(async (): Promise<void> => {
-    if (IS_MOCK) {
-      show({ title: "Sample mode", description: MOCK_MESSAGE, variant: "info" });
-      return;
-    }
     if (!walletClient) {
       show({
         title: "Connect a wallet",
@@ -52,11 +45,6 @@ export function useClaimAll(): UseClaimAll {
     });
 
     try {
-      /*
-          TODO(live): the mock `Redeemable[]` from useRedeemable() is not the SDK's
-          on-chain claimable shape, so we let the write wrapper re-fetch via getClaimable.
-          Pass the real list through once liveDataSource is wired in source.ts.
-        */
       const { claimed, failed } = await claimAllWrite(walletClient);
       const symbol = getCollateral().symbol;
       const total = claimed.reduce((sum, market) => sum + Number(market.expectedPayout), 0);

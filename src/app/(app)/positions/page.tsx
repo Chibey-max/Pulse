@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Section, SectionHeading } from "@/components/ui";
-import { ClaimPanel, MockBanner, PositionsList } from "@/components/app";
+import { ClaimPanel, PositionsList } from "@/components/app";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
@@ -19,7 +19,6 @@ export default function PositionsPage() {
           title="Positions"
           description="Wallet-held and session-held, across open, locked, unclaimed, and claimed."
         />
-        <MockBanner />
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start">
           <PositionsList />
           <div className="flex flex-col gap-2">

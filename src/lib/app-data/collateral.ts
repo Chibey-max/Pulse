@@ -1,17 +1,12 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useState } from "react";
 import { erc20Abi, formatUnits } from "viem";
-import {
-  useAccount,
-  useChainId,
-  useReadContract,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
+import { useAccount, useChainId, useReadContract, useSwitchChain, useWalletClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
-import { getCollateral } from "@/lib/chain";
+import { getCollateral, SOMNIA_SHANNON_CHAIN_ID } from "@/lib/chain";
 import { formatAmount } from "@/lib/format";
+import { createPulseExchange } from "@/lib/markets";
 
 /*
   Collateral (tUSDC on Shannon) reads and the testnet faucet. The token scale is always
@@ -20,18 +15,7 @@ import { formatAmount } from "@/lib/format";
 
 // === Constants
 
-/* Faucet contract rejects any single call above this. */
 const FAUCET_CAP = 10_000;
-
-const faucetAbi = [
-  {
-    type: "function",
-    name: "faucet",
-    stateMutability: "nonpayable",
-    inputs: [{ name: "amount", type: "uint256" }],
-    outputs: [],
-  },
-] as const;
 
 // === Types
 
@@ -49,13 +33,13 @@ export interface FaucetResult {
   mint: () => void;
   status: FaucetStatus;
   hash: `0x${string}` | undefined;
+  error: string | undefined;
 }
 
 // === Address + decimals
 
 export function useCollateralAddress(): `0x${string}` {
-  const chainId = useChainId();
-  return getCollateral(chainId).address;
+  return getCollateral(SOMNIA_SHANNON_CHAIN_ID).address;
 }
 
 export function useCollateralDecimals(): number {
@@ -64,6 +48,7 @@ export function useCollateralDecimals(): number {
     address,
     abi: erc20Abi,
     functionName: "decimals",
+    chainId: SOMNIA_SHANNON_CHAIN_ID,
   });
 
   return data ?? 6;
@@ -81,7 +66,8 @@ export function useCollateralBalance(): CollateralBalance {
     abi: erc20Abi,
     functionName: "balanceOf",
     args: account ? [account] : undefined,
-    query: { enabled: Boolean(account) },
+    chainId: SOMNIA_SHANNON_CHAIN_ID,
+    query: { enabled: Boolean(account), refetchInterval: 5_000 },
   });
 
   const raw: bigint = data ?? BigInt(0);
@@ -94,9 +80,15 @@ export function useCollateralBalance(): CollateralBalance {
 
 export function useFaucet(): FaucetResult {
   const { address: account } = useAccount();
+  const connectedChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
+  const { data: walletClient } = useWalletClient();
   const token = useCollateralAddress();
   const decimals = useCollateralDecimals();
   const queryClient = useQueryClient();
+  const [hash, setHash] = useState<`0x${string}` | undefined>();
+  const [status, setStatus] = useState<FaucetStatus>("idle");
+  const [error, setError] = useState<string | undefined>();
 
   /*
     Disabled read purely to obtain the canonical wagmi query key for the balance, so the
@@ -107,39 +99,46 @@ export function useFaucet(): FaucetResult {
     abi: erc20Abi,
     functionName: "balanceOf",
     args: account ? [account] : undefined,
+    chainId: SOMNIA_SHANNON_CHAIN_ID,
     query: { enabled: false },
   });
 
-  const { data: hash, writeContract, status: writeStatus } = useWriteContract();
-  const { status: receiptStatus } = useWaitForTransactionReceipt({ hash });
-
-  useEffect(() => {
-    if (receiptStatus === "success") {
-      void queryClient.invalidateQueries({ queryKey: balanceKey });
-    }
-  }, [receiptStatus, queryClient, balanceKey]);
-
   const mint = useCallback(() => {
-    const scale = BigInt(10) ** BigInt(decimals);
-    const amount = BigInt(FAUCET_CAP) * scale;
-    writeContract({
-      address: token,
-      abi: faucetAbi,
-      functionName: "faucet",
-      args: [amount],
-    });
-  }, [decimals, token, writeContract]);
+    void (async () => {
+      try {
+        setError(undefined);
+        setStatus("pending");
 
-  const status: FaucetStatus =
-    writeStatus === "error" || receiptStatus === "error"
-      ? "error"
-      : receiptStatus === "success"
-        ? "confirmed"
-        : hash
-          ? "confirming"
-          : writeStatus === "pending"
-            ? "pending"
-            : "idle";
+        if (!account) throw new Error("Connect a wallet before minting tUSDC.");
+        if (connectedChainId !== SOMNIA_SHANNON_CHAIN_ID) {
+          await switchChainAsync({ chainId: SOMNIA_SHANNON_CHAIN_ID });
+        }
+        if (!walletClient) throw new Error("Wallet client is not ready for Somnia Shannon.");
 
-  return { mint, status, hash };
+        const scale = BigInt(10) ** BigInt(decimals);
+        const amount = BigInt(FAUCET_CAP) * scale;
+        const exchange = createPulseExchange(walletClient);
+        const result = await exchange.trader.faucet({ amount, testUsdc: token });
+
+        setHash(result.hash);
+        setStatus("confirmed");
+        await queryClient.invalidateQueries({ queryKey: balanceKey });
+        await queryClient.invalidateQueries({ queryKey: ["readContract"] });
+      } catch (err) {
+        setStatus("error");
+        setError(err instanceof Error ? err.message : "Faucet call failed.");
+      }
+    })();
+  }, [
+    account,
+    balanceKey,
+    connectedChainId,
+    decimals,
+    queryClient,
+    switchChainAsync,
+    token,
+    walletClient,
+  ]);
+
+  return { mint, status, hash, error };
 }
