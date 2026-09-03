@@ -1,0 +1,2 @@
+pnpm run validate-branch-name
+pnpm run lint-staged

@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+import { Card, Section, SectionHeading } from "@/components/ui";
+import { ActivityTape, MockBanner } from "@/components/app";
+import { createMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = createMetadata({
+  title: "Activity",
+  path: "/activity",
+  noIndex: true,
+});
+
+export default function ActivityPage() {
+  return (
+    <Section id="activity" spacing="tight">
+      <div className="flex flex-col gap-6">
+        <SectionHeading
+          id="activity"
+          as="h1"
+          title="Activity"
+          description="Placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows required no signature."
+        />
+        <MockBanner />
+        <Card className="px-5">
+          <ActivityTape />
+        </Card>
+      </div>
+    </Section>
+  );
+}

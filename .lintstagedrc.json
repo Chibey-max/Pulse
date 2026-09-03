@@ -1,0 +1,7 @@
+{
+  "*.{js,jsx,ts,tsx,mjs,cjs}": ["eslint --fix", "prettier --write"],
+  "*.{json,css,md,mdx,yml,yaml}": ["prettier --write"],
+  "*.sol": [
+    "bash -c 'command -v forge >/dev/null 2>&1 && forge fmt || echo \"skip forge fmt (forge not installed)\"'"
+  ]
+}

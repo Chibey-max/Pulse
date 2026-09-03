@@ -1,0 +1,25 @@
+node_modules
+pnpm-lock.yaml
+package-lock.json
+
+# Build output
+.next
+out
+build
+coverage
+
+# agent worktrees
+/.claude
+
+# Foundry (repo-root lib/ only; src/lib/ is app code and must be formatted)
+/lib
+/out
+/cache
+/broadcast
+
+# Solidity is formatted by `forge fmt`
+*.sol
+
+# Generated
+next-env.d.ts
+*.tsbuildinfo

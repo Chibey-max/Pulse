@@ -1,0 +1,542 @@
+@import "tailwindcss";
+
+/*
+  Class-based dark variant. next-themes writes `class="dark"` / `class="light"` on <html>
+  (see ThemeProvider), and the token blocks below key off `.light`. The `dark:` utility is
+  rarely needed because tokens flip on their own, but it is wired for the exceptions.
+*/
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* === Raw tokens: dark is the default (:root), light overrides in .light */
+
+:root {
+  /* Surfaces: deep ink/navy, never pure black (see docs/CLAUDE-DESIGN-BRIEF.md) */
+  --bg: #0a0e17;
+  --bg-panel: #0f1421;
+  --bg-elevated: #151b2b;
+  --bg-hover: #1b2233;
+
+  /* Hairlines */
+  --border: #1e2636;
+  --border-bright: #2c3547;
+
+  /* Text ramp */
+  --text-primary: #e9edf6;
+  --text-secondary: #9aa6bd;
+  --text-muted: #6a7589;
+
+  /*
+    Up and Down carry equal visual authority. Same saturation, same weight: the brand
+    must not look permanently bullish.
+  */
+  --up: #2fd486;
+  --up-dim: #23a86a;
+  --on-up: #06110b;
+  --down: #ff5c6c;
+  --down-dim: #e2495b;
+  --on-down: #1a0709;
+
+  /* Somnia / reactive-system events */
+  --signal: #4dd0e1;
+  /* Countdown urgency; always paired with shape and label, never colour alone */
+  --warn: #f5b13d;
+
+  /* Elevation */
+  --shadow-nav: 0 8px 30px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-card: 0 1px 0 var(--border), 0 12px 32px -12px rgb(0 0 0 / 0.5);
+
+  /* Layout */
+  --navbar-h: 3.5rem;
+  --section-px: 1rem;
+  --section-py: 4rem;
+  --section-py-tight: 2.5rem;
+  --section-py-loose: 6rem;
+  --panel-gap: 1rem;
+  --stack-gap: 0.75rem;
+
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-pill: 9999px;
+
+  /* Fixed light: text that sits on a media surface which never flips with the theme */
+  --fixed-light: #f4f6fb;
+}
+
+.light {
+  --bg: #f7f7f4;
+  --bg-panel: #ffffff;
+  --bg-elevated: #f1f1ec;
+  --bg-hover: #e9e9e2;
+
+  --border: #e4e3dd;
+  --border-bright: #d3d2ca;
+
+  --text-primary: #15171d;
+  --text-secondary: #4a5261;
+  --text-muted: #6b7482;
+
+  /* Accents remapped for WCAG AA on the light ground and on the filled button */
+  --up: #0b8a4c;
+  --up-dim: #097840;
+  --on-up: #ffffff;
+  --down: #c23b45;
+  --down-dim: #a8323b;
+  --on-down: #ffffff;
+
+  --signal: #0e8fa8;
+  --warn: #b7791f;
+
+  --shadow-nav: 0 4px 20px rgb(21 23 29 / 0.1), 0 0 0 1px rgb(21 23 29 / 0.04);
+  --shadow-card: 0 1px 0 var(--border), 0 12px 32px -14px rgb(21 23 29 / 0.14);
+}
+
+/*
+  Section rhythm shifts at the breakpoints so `px-section-px` / `py-section-py` are
+  responsive on their own and no call site repeats a px-4 sm:px-6 lg:px-8 ladder.
+*/
+@media (width >= 40rem) {
+  :root {
+    --navbar-h: 4rem;
+    --section-px: 1.5rem;
+    --section-py: 5rem;
+    --section-py-tight: 3.5rem;
+    --section-py-loose: 7rem;
+  }
+}
+
+@media (width >= 64rem) {
+  :root {
+    --section-px: 2rem;
+    --section-py: 7rem;
+    --section-py-tight: 4rem;
+    --section-py-loose: 9rem;
+  }
+}
+
+/* === Theme mapping. `inline` keeps the reference to the raw var so media overrides cascade. */
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-panel: var(--bg-panel);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+
+  --color-border: var(--border);
+  --color-border-bright: var(--border-bright);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-up: var(--up);
+  --color-up-dim: var(--up-dim);
+  --color-on-up: var(--on-up);
+  --color-down: var(--down);
+  --color-down-dim: var(--down-dim);
+  --color-on-down: var(--on-down);
+  --color-signal: var(--signal);
+  --color-warn: var(--warn);
+  --color-fixed-light: var(--fixed-light);
+
+  /* Fonts: next/font sets these on <html> (see layout.tsx). Body switch is one line. */
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-body-alt: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "JetBrains Mono", monospace;
+
+  /* Fluid type scale: each entry replaces a text-3xl sm:text-5xl ladder */
+  --text-display: clamp(2.5rem, 1.4rem + 5vw, 4.5rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: clamp(2rem, 1.2rem + 3.6vw, 3.5rem);
+  --text-h1--line-height: 1.08;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: clamp(1.6rem, 1.1rem + 2.2vw, 2.5rem);
+  --text-h2--line-height: 1.15;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h3: clamp(1.25rem, 1rem + 1.1vw, 1.625rem);
+  --text-h3--line-height: 1.25;
+  --text-lead: clamp(1.0625rem, 0.95rem + 0.6vw, 1.3rem);
+  --text-lead--line-height: 1.6;
+  --text-body: clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem);
+  --text-body--line-height: 1.65;
+  --text-caption: clamp(0.8125rem, 0.78rem + 0.15vw, 0.9375rem);
+  --text-caption--line-height: 1.5;
+  --text-micro: clamp(0.6875rem, 0.66rem + 0.12vw, 0.75rem);
+  --text-micro--line-height: 1.4;
+
+  /* Spacing tokens map onto the responsive raw vars */
+  --spacing-section-px: var(--section-px);
+  --spacing-section-py: var(--section-py);
+  --spacing-section-py-tight: var(--section-py-tight);
+  --spacing-section-py-loose: var(--section-py-loose);
+  --spacing-panel-gap: var(--panel-gap);
+  --spacing-stack-gap: var(--stack-gap);
+  --spacing-navbar: var(--navbar-h);
+
+  --radius-DEFAULT: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-nav: var(--shadow-nav);
+  --shadow-card: var(--shadow-card);
+
+  /*
+    Single shared page width, consumed as `max-w-container` (the `--container-*` namespace
+    generates `max-w-*` in v4). Every Section, the Navbar, and the Footer use it; never
+    write max-w-[75rem] at a call site.
+  */
+  --container-container: 75rem;
+
+  --letter-spacing-logo: 0.24em;
+}
+
+/* === Base */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  *:focus-visible {
+    outline: 1px solid color-mix(in srgb, var(--signal) 60%, transparent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--up) 24%, transparent);
+    color: var(--text-primary);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-bright);
+    border-radius: var(--radius-pill);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-bright) transparent;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  a {
+    transition: color 0.15s ease;
+  }
+}
+
+/* === Utilities and decorative surfaces (ported from GuardRail, retinted to Pulse tokens) */
+
+@layer components {
+  .font-mono-numbers {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Visually hidden, still announced. */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .skip-link:focus-visible {
+    position: fixed;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 10000;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip: auto;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--up);
+    color: var(--up);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    border-radius: var(--radius);
+  }
+
+  /*
+    Animated underline for nav links. transform: scaleX, so it is compositor-only and
+    never triggers layout on hover. Draws in from the cursor's entry edge.
+  */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    left: 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .link-underline:hover::after,
+  .link-underline:focus-visible::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /*
+    Cursor-tracking edge glow. usePointerGlow writes --pointer-x / --pointer-y once per
+    frame from one delegated listener, so any number of these cost one listener total.
+  */
+  .edge-glow {
+    position: relative;
+    isolation: isolate;
+  }
+  .edge-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(
+      16rem circle at var(--pointer-x, -100%) var(--pointer-y, -100%),
+      var(--edge-glow-color, color-mix(in srgb, var(--up) 55%, transparent)),
+      transparent 42%
+    );
+    background-attachment: fixed;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .edge-glow:hover::before,
+  .edge-glow:focus-within::before {
+    opacity: 1;
+  }
+
+  /*
+    Ambient background stack. Fixed layers behind all content:
+      -30 .bg-mesh      drifting colour bloom (the Stax-referenced dark ground)
+      -20 .bg-grid      faint engineering grid, parallaxes on scroll
+       -5 .bg-spotlight large soft glow following the pointer (the Tekcify-referenced feel)
+    DotField (canvas) mounts separately between them. All CSS, zero WebGL.
+  */
+  .bg-mesh,
+  .bg-grid,
+  .bg-spotlight {
+    position: fixed;
+    pointer-events: none;
+    contain: strict;
+  }
+
+  .bg-mesh {
+    inset: -25%;
+    z-index: -30;
+    opacity: 0.55;
+    background:
+      radial-gradient(
+        36rem circle at 16% 20%,
+        color-mix(in srgb, var(--up) 16%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        32rem circle at 84% 16%,
+        color-mix(in srgb, var(--signal) 15%, transparent),
+        transparent 60%
+      ),
+      radial-gradient(
+        38rem circle at 70% 82%,
+        color-mix(in srgb, var(--down) 10%, transparent),
+        transparent 62%
+      );
+    animation: mesh-drift 48s ease-in-out infinite alternate;
+    will-change: transform;
+  }
+
+  .bg-grid {
+    inset: 0;
+    z-index: -20;
+    opacity: 0.22;
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--up) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--up) 6%, transparent) 1px, transparent 1px);
+    background-size: 64px 64px;
+    transform: translate3d(0, calc(var(--scroll-y, 0) * -0.04px), 0);
+    animation: grid-drift 24s linear infinite;
+    mask-image: radial-gradient(ellipse 100% 60% at 50% 38%, #000 40%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 100% 60% at 50% 38%, #000 40%, transparent 100%);
+  }
+
+  .bg-spotlight {
+    inset: 0;
+    z-index: -5;
+    background: radial-gradient(
+      34rem circle at var(--pointer-x, 50%) var(--pointer-y, 28%),
+      color-mix(in srgb, var(--up) 8%, transparent),
+      color-mix(in srgb, var(--signal) 5%, transparent) 36%,
+      transparent 66%
+    );
+    transition: opacity 0.4s ease;
+  }
+  @media (pointer: coarse) {
+    .bg-spotlight {
+      display: none;
+    }
+  }
+
+  /* Value-change flash: the only cue that a poll actually moved a number. */
+  .value-flash {
+    animation: value-flash 0.9s ease-out;
+  }
+
+  /*
+    Countdown heartbeat: a barely-there scale bump on every whole second, re-triggered by
+    a React key change on the digit span. Just enough to read as alive, never a bounce.
+  */
+  .countdown-tick {
+    animation: countdown-tick 1s ease-out;
+  }
+
+  /* Settled-in panel: the resting shadow for a Card once it has finished revealing. */
+  .card-rest {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.2s ease;
+  }
+  .card-rest:hover {
+    transform: translateY(-2px);
+    border-color: var(--border-bright);
+  }
+}
+
+@keyframes countdown-tick {
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.014);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .countdown-tick {
+    animation: none;
+  }
+  .card-rest {
+    transition: none;
+  }
+}
+
+@keyframes mesh-drift {
+  from {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2%, 1.5%, 0) scale(1.08);
+  }
+}
+
+@keyframes grid-drift {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      64px 64px,
+      64px 64px;
+  }
+}
+
+@keyframes value-flash {
+  from {
+    color: var(--flash-color, var(--up));
+    text-shadow: 0 0 12px var(--flash-color, var(--up));
+  }
+}
+
+/* === Theme toggle ripple (see ThemeToggle) */
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0% at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+  to {
+    clip-path: circle(140% at var(--theme-toggle-x, 50%) var(--theme-toggle-y, 50%));
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: none;
+  }
+  ::view-transition-new(root) {
+    animation: theme-reveal 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    animation-fill-mode: both;
+  }
+}
+
+/* === Reduced motion: CSS backstop. Components also branch in JS via usePrefersReducedMotion. */
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-mesh,
+  .bg-grid {
+    animation: none;
+    transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

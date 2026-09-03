@@ -1,0 +1,113 @@
+import { BaseError, UserRejectedRequestError } from "viem";
+import {
+  ContractRevertError,
+  IndexerError,
+  InvalidInputError,
+  NotConfiguredError,
+  RpcError,
+  SignerRequiredError,
+  SomniaMarketsError,
+} from "@somnia-chain/markets-sdk";
+
+// === Constants
+
+const REJECTED = "You cancelled the transaction.";
+const FALLBACK = "Something went wrong. Nothing was submitted.";
+const MAX_TAIL = 120;
+
+// === Helpers
+
+function truncate(message: string): string {
+  const trimmed = message.trim();
+  return trimmed.length > MAX_TAIL ? `${trimmed.slice(0, MAX_TAIL - 1)}…` : trimmed;
+}
+
+/*
+  A user rejection can arrive as a viem error, a raw provider error with code 4001, or a
+  nested `cause`. Walk the chain and match on either signal.
+*/
+function isUserRejection(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; depth < 5 && current; depth += 1) {
+    if (current instanceof UserRejectedRequestError) return true;
+    if (typeof current === "object") {
+      const record = current as { code?: unknown; message?: unknown; cause?: unknown };
+      if (record.code === 4001) return true;
+      if (
+        typeof record.message === "string" &&
+        /rejected|denied|cancell?ed/i.test(record.message)
+      ) {
+        return true;
+      }
+      current = record.cause;
+      continue;
+    }
+    break;
+  }
+  return false;
+}
+
+function mentionsInsufficientFunds(message: string): boolean {
+  return /insufficient funds|insufficient balance|exceeds balance/i.test(message);
+}
+
+function humanizeRevert(err: ContractRevertError): string {
+  if (err.errorName) {
+    if (/insufficientbalance|insufficientfunds/i.test(err.errorName)) {
+      return "Not enough tUSDC to cover this call.";
+    }
+    return `The contract rejected this call (${err.errorName}).`;
+  }
+  if (err.reason && !/^execution reverted\.?$/i.test(err.reason)) {
+    return err.reason;
+  }
+  return FALLBACK;
+}
+
+// === decodeTxError
+
+/*
+  Turn any thrown value from the write path into one sentence a trader can act on. Never
+  surfaces a bare "execution reverted" and never implies a transaction was sent when it
+  was not.
+*/
+export function decodeTxError(err: unknown): string {
+  if (isUserRejection(err)) return REJECTED;
+
+  if (err instanceof ContractRevertError) return humanizeRevert(err);
+  if (err instanceof IndexerError) {
+    return "The indexer did not respond. Nothing was submitted.";
+  }
+  if (err instanceof RpcError) {
+    return "The network node did not respond. Nothing was submitted.";
+  }
+  if (err instanceof SignerRequiredError) {
+    return "Connect a wallet to sign this transaction.";
+  }
+  if (err instanceof NotConfiguredError) {
+    return "Live trading is not configured. Nothing was submitted.";
+  }
+  if (err instanceof InvalidInputError) return truncate(err.message);
+  if (err instanceof SomniaMarketsError) return truncate(err.message) || FALLBACK;
+
+  if (err instanceof BaseError) {
+    if (mentionsInsufficientFunds(err.message)) {
+      return "Not enough balance to cover this transaction and gas.";
+    }
+    const short = err.shortMessage?.trim();
+    if (short && !/^execution reverted\.?$/i.test(short)) return short;
+    return FALLBACK;
+  }
+
+  if (err instanceof Error) {
+    if (mentionsInsufficientFunds(err.message)) {
+      return "Not enough balance to cover this transaction and gas.";
+    }
+    const message = err.message?.trim();
+    if (message && !/^execution reverted\.?$/i.test(message)) {
+      return `${FALLBACK} ${truncate(message)}`;
+    }
+  }
+
+  return FALLBACK;
+}
