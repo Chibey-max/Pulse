@@ -26,7 +26,7 @@ const ROWS = [
 */
 export function SettlementProofSection() {
   return (
-    <Section id="proof" background="border-t border-border">
+    <Section id="proof" panel="deep" overlap>
       <div className="flex flex-col gap-10">
         <SectionHeading
           id="proof"

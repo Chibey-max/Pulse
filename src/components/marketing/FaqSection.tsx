@@ -13,7 +13,7 @@ const PREVIEW_COUNT = 5;
 */
 export function FaqSection() {
   return (
-    <Section id="faq" background="border-t border-border">
+    <Section id="faq">
       <div className="flex flex-col gap-8">
         <SectionHeading
           id="faq"

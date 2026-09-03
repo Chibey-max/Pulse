@@ -1,6 +1,8 @@
 "use client";
 
+import { useTheme } from "next-themes";
 import { DotField } from "@/components/reactbits/DotField";
+import { useHydrated } from "@/hooks/useHydrated";
 import { usePointerGlow } from "@/hooks/usePointerGlow";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
@@ -23,16 +25,34 @@ export interface AmbientBackgroundProps {
   drive it (pointer and scroll). Mount once, in the route group's layout. Do not mount
   usePointerGlow anywhere else.
 
+  Dark keeps the full vocabulary (mesh, grid, Canvas 2D dots, spotlight). Light drops all
+  of it for a single soft diagonal wash plus a faint pointer spotlight, because the dot
+  field and engineering grid read as noise against the soft light palette.
+
   Every layer is CSS except DotField, which is Canvas 2D (not WebGL) and is dropped
   entirely, not merely frozen, under reduced motion.
 */
 export function AmbientBackground({ variant = "full" }: AmbientBackgroundProps) {
-  const prefersReduced = usePrefersReducedMotion();
+  const prefersReduced: boolean = usePrefersReducedMotion();
+  const hydrated: boolean = useHydrated();
+  const { resolvedTheme } = useTheme();
 
+  // Delegated listeners feed global CSS vars; run them regardless of theme.
   usePointerGlow();
   useScrollProgress();
 
-  const subtle = variant === "subtle";
+  // Unhydrated renders match the default theme (dark) to keep SSR and first client render in sync.
+  const isLight: boolean = hydrated && resolvedTheme === "light";
+  const subtle: boolean = variant === "subtle";
+
+  if (isLight) {
+    return (
+      <div aria-hidden="true">
+        <div className="bg-beam" aria-hidden="true" />
+        <div className="bg-spotlight" style={{ opacity: subtle ? 0.25 : 0.4 }} />
+      </div>
+    );
+  }
 
   return (
     <div aria-hidden="true">

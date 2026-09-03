@@ -10,6 +10,7 @@ import { CtaLink } from "@/components/ui";
 import { MARKETING_NAV } from "@/lib/nav";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { DURATION, EASE_OUT } from "@/lib/motion";
+import { cn } from "@/lib/cn";
 
 // === Component
 
@@ -24,6 +25,7 @@ import { DURATION, EASE_OUT } from "@/lib/motion";
 export function NavigationBar() {
   const [open, setOpen] = useState<boolean>(false);
   const [visible, setVisible] = useState<boolean>(true);
+  const [scrolled, setScrolled] = useState<boolean>(false);
   const lastY = useRef<number>(0);
   const ticking = useRef<boolean>(false);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
@@ -37,6 +39,7 @@ export function NavigationBar() {
       if (y < 80) setVisible(true);
       else if (y > lastY.current) setVisible(false);
       else setVisible(true);
+      setScrolled(y > 12);
       lastY.current = y;
       ticking.current = false;
     };
@@ -79,7 +82,13 @@ export function NavigationBar() {
           : "transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.6s cubic-bezier(0.16,1,0.3,1)",
       }}
     >
-      <div className="rounded-pill border-border-bright bg-bg-panel/90 shadow-nav flex h-14 w-full items-center justify-between gap-3 border px-4 backdrop-blur-md lg:px-6">
+      <div
+        className={cn(
+          "rounded-pill border-border-bright flex w-full items-center justify-between gap-3 border px-4 backdrop-blur-md lg:px-6",
+          !prefersReduced && "transition-[height,background-color,box-shadow] duration-300",
+          scrolled ? "bg-bg-panel/95 h-13 shadow-xl" : "bg-bg-panel/90 shadow-nav h-14",
+        )}
+      >
         <Link href="/" className="rounded-pill flex items-center" aria-label="Pulse home">
           <AppLogo variant="full" size="md" />
         </Link>

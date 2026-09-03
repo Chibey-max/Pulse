@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { MdKeyboardArrowDown } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import { cn } from "@/lib/cn";
 import type { FaqItem } from "./types";
 
@@ -66,7 +66,7 @@ export function Faq({ items, singleOpen = true, defaultOpen = 0, className }: Fa
             id={slug}
             className={cn(
               "scroll-mt-navbar border-border border-b first:border-t",
-              isOpen && "bg-bg-panel/50",
+              isOpen && "bg-bg-panel/60",
             )}
           >
             <h3>
@@ -84,14 +84,15 @@ export function Faq({ items, singleOpen = true, defaultOpen = 0, className }: Fa
                   </span>
                   {item.question}
                 </span>
-                <MdKeyboardArrowDown
-                  size={20}
+                <span
                   aria-hidden="true"
                   className={cn(
-                    "text-text-muted shrink-0 transition-transform duration-300",
-                    isOpen && "text-signal rotate-180",
+                    "border-border-bright text-text-muted flex size-6 shrink-0 items-center justify-center rounded-full border transition-transform duration-300",
+                    isOpen && "text-signal rotate-45",
                   )}
-                />
+                >
+                  <MdAdd size={16} />
+                </span>
               </button>
             </h3>
 

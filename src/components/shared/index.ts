@@ -5,4 +5,5 @@ export { JsonLd } from "./JsonLd";
 export { Navbar } from "./Navbar";
 export { NavigationBar } from "./NavigationBar";
 export { Providers } from "./Providers";
+export { ScrollProgress } from "./ScrollProgress";
 export { WalletButton } from "./WalletButton";

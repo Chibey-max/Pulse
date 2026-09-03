@@ -108,7 +108,7 @@ function Rail() {
 
 export function PulseTimeline() {
   return (
-    <Section id="how-it-works" background="border-t border-border">
+    <Section id="how-it-works" panel="deep" overlap>
       <div className="flex flex-col gap-10">
         <SectionHeading
           id="how-it-works"

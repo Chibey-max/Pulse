@@ -44,6 +44,25 @@
   /* Elevation */
   --shadow-nav: 0 8px 30px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(255 255 255 / 0.04);
   --shadow-card: 0 1px 0 var(--border), 0 12px 32px -12px rgb(0 0 0 / 0.5);
+  /*
+    Card separation. On dark it is a hairline (borders read on dark); on light it becomes
+    a soft diffuse shadow so surfaces float rather than being outlined.
+  */
+  --elevation: 0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 0.3);
+  --elevation-lifted: 0 0 0 1px var(--border-bright), 0 18px 40px -18px rgb(0 0 0 / 0.55);
+
+  /*
+    Section panels. Marketing sections sit on one of these as a large rounded surface that
+    stacks and slightly overlaps its neighbour on scroll.
+  */
+  --panel-tint: #0d1a17;
+  --panel-tint-signal: #0b1a20;
+  --panel-deep: #06090f;
+  --panel-deep-text: #eef2f8;
+  --panel-deep-text-muted: #93a0b5;
+
+  /* Light-only ambient wash (see .bg-beam); on dark this stays transparent. */
+  --beam: transparent;
 
   /* Layout */
   --navbar-h: 3.5rem;
@@ -54,8 +73,10 @@
   --panel-gap: 1rem;
   --stack-gap: 0.75rem;
 
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --radius-lg: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
   --radius-pill: 9999px;
 
   /* Fixed light: text that sits on a media surface which never flips with the theme */
@@ -63,17 +84,19 @@
 }
 
 .light {
-  --bg: #f7f7f4;
+  /* A soft cool grey, never pure white; surfaces sit whiter than the ground. */
+  --bg: #f1f2f5;
   --bg-panel: #ffffff;
-  --bg-elevated: #f1f1ec;
-  --bg-hover: #e9e9e2;
+  --bg-elevated: #f6f7f9;
+  --bg-hover: #ecedf1;
 
-  --border: #e4e3dd;
-  --border-bright: #d3d2ca;
+  /* Borders recede in light mode; shadow does the separating (see --elevation). */
+  --border: #e7e9ef;
+  --border-bright: #d9dce4;
 
-  --text-primary: #15171d;
-  --text-secondary: #4a5261;
-  --text-muted: #6b7482;
+  --text-primary: #14161d;
+  --text-secondary: #4d5563;
+  --text-muted: #737b8a;
 
   /* Accents remapped for WCAG AA on the light ground and on the filled button */
   --up: #0b8a4c;
@@ -86,8 +109,23 @@
   --signal: #0e8fa8;
   --warn: #b7791f;
 
-  --shadow-nav: 0 4px 20px rgb(21 23 29 / 0.1), 0 0 0 1px rgb(21 23 29 / 0.04);
-  --shadow-card: 0 1px 0 var(--border), 0 12px 32px -14px rgb(21 23 29 / 0.14);
+  --shadow-nav: 0 6px 24px -6px rgb(17 19 26 / 0.12), 0 0 0 1px rgb(17 19 26 / 0.03);
+  --shadow-card: 0 1px 2px rgb(17 19 26 / 0.05), 0 14px 36px -16px rgb(17 19 26 / 0.14);
+  --elevation: 0 1px 2px rgb(17 19 26 / 0.05), 0 10px 30px -14px rgb(17 19 26 / 0.12);
+  --elevation-lifted: 0 2px 6px rgb(17 19 26 / 0.07), 0 24px 48px -20px rgb(17 19 26 / 0.2);
+
+  /* Soft tinted panels; the deep panel stays a dark band in light mode (the Tekcify footer trick). */
+  --panel-tint: #edf4f0;
+  --panel-tint-signal: #ebf3f5;
+  --panel-deep: #10151f;
+  --panel-deep-text: #eef2f8;
+  --panel-deep-text-muted: #93a0b5;
+
+  /* Two faint diagonal light beams from the top, plus a whisper of colour. */
+  --beam:
+    linear-gradient(180deg, rgb(255 255 255 / 0.6), transparent 40%),
+    radial-gradient(60rem 40rem at 30% -10%, rgb(11 138 76 / 0.06), transparent 60%),
+    radial-gradient(56rem 40rem at 78% -6%, rgb(14 143 168 / 0.05), transparent 60%);
 }
 
 /*
@@ -137,6 +175,11 @@
   --color-signal: var(--signal);
   --color-warn: var(--warn);
   --color-fixed-light: var(--fixed-light);
+  --color-panel-tint: var(--panel-tint);
+  --color-panel-tint-signal: var(--panel-tint-signal);
+  --color-panel-deep: var(--panel-deep);
+  --color-panel-deep-text: var(--panel-deep-text);
+  --color-panel-deep-text-muted: var(--panel-deep-text-muted);
 
   /* Fonts: next/font sets these on <html> (see layout.tsx). Body switch is one line. */
   --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
@@ -176,10 +219,14 @@
 
   --radius-DEFAULT: var(--radius);
   --radius-lg: var(--radius-lg);
+  --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
   --radius-pill: var(--radius-pill);
 
   --shadow-nav: var(--shadow-nav);
   --shadow-card: var(--shadow-card);
+  --shadow-elevation: var(--elevation);
+  --shadow-elevation-lifted: var(--elevation-lifted);
 
   /*
     Single shared page width, consumed as `max-w-container` (the `--container-*` namespace
@@ -443,7 +490,76 @@
   }
   .card-rest:hover {
     transform: translateY(-2px);
+    box-shadow: var(--elevation-lifted);
     border-color: var(--border-bright);
+  }
+
+  /*
+    Section panels. Marketing sections wrap their inner container in one of these large
+    rounded surfaces; consecutive panels pull up under the previous one so they stack and
+    overlap slightly as the page scrolls (the Tekcify block layout).
+  */
+  .panel-surface {
+    background-color: var(--panel-tint);
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--elevation);
+  }
+  .panel-surface-signal {
+    background-color: var(--panel-tint-signal);
+    border-radius: var(--radius-3xl);
+    box-shadow: var(--elevation);
+  }
+  .panel-deep {
+    background-color: var(--panel-deep);
+    color: var(--panel-deep-text);
+    border-radius: var(--radius-3xl);
+  }
+  /* Text tokens inside a deep panel resolve to the panel's own light ramp. */
+  .panel-deep {
+    --text-primary: var(--panel-deep-text);
+    --text-secondary: var(--panel-deep-text-muted);
+    --text-muted: color-mix(in srgb, var(--panel-deep-text-muted) 78%, transparent);
+    --border: color-mix(in srgb, var(--panel-deep-text) 12%, transparent);
+    --border-bright: color-mix(in srgb, var(--panel-deep-text) 20%, transparent);
+    --bg-panel: color-mix(in srgb, var(--panel-deep-text) 5%, transparent);
+    --bg-elevated: color-mix(in srgb, var(--panel-deep-text) 8%, transparent);
+  }
+
+  /*
+    Light-mode ambient wash. Two faint diagonal beams from the top plus a whisper of the
+    brand hues. Transparent on dark (the mesh/grid/dot stack owns that). Fixed, behind
+    everything.
+  */
+  .bg-beam {
+    position: fixed;
+    inset: 0;
+    z-index: -25;
+    pointer-events: none;
+    background: var(--beam);
+  }
+
+  /*
+    Page scroll-progress rail. A hairline bar pinned to the very top, its width driven by
+    --scroll-progress (written once per frame by useScrollProgress).
+  */
+  .scroll-rail {
+    position: fixed;
+    inset-inline: 0;
+    top: 0;
+    z-index: 60;
+    height: 2px;
+    transform-origin: left center;
+    transform: scaleX(var(--scroll-progress, 0));
+    background: linear-gradient(90deg, var(--up), var(--signal));
+    pointer-events: none;
+  }
+
+  /* 3D cursor tilt for a hero surface. tiltX / tiltY written by the component. */
+  .tilt-surface {
+    transform: perspective(900px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg));
+    transform-style: preserve-3d;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
   }
 }
 

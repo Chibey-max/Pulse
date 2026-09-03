@@ -8,7 +8,7 @@ export function MarketTile({ market }: { market: MarketCard }) {
   return (
     <Link
       href={`/market/${market.marketId}`}
-      className="edge-glow card-rest border-border bg-bg-panel flex flex-col gap-3 rounded-lg border p-4"
+      className="edge-glow card-rest shadow-elevation bg-bg-panel flex flex-col gap-3 rounded-lg p-4"
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-caption text-text-primary font-mono tracking-wider uppercase">
