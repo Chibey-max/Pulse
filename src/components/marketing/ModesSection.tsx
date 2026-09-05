@@ -22,7 +22,7 @@ const MODES = [
     summary: "A per-user vault you own and only you can withdraw from.",
     points: [
       "Deposit a budget and set hard limits enforced onchain",
-      "Validators redeem winnings on settlement, no signature",
+      "Handler redemptions are shown only when a tx hash exists",
       "Disarm or withdraw at any time, never blocked by policy",
     ],
   },

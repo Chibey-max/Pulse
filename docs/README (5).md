@@ -2,7 +2,7 @@
 
 **Your winnings come to you.**
 
-Pulse is a session layer for [DreamDEX Event Contracts](https://docs.dreamdex.io/trading/event-contracts) on [Somnia](https://somnia.network). Call the next candle in one tap, then let Somnia validators redeem your winnings the moment the window resolves. No claim button. No keeper bot. No signature.
+Pulse is a session layer for [DreamDEX Event Contracts](https://docs.dreamdex.io/trading/event-contracts) on [Somnia](https://somnia.network). Call the next candle in one tap, track settlement state, and keep every session claim tied to observable handler proof.
 
 Built for the [Somnia × DreamDEX Event Contracts Hackathon](https://dorahacks.io/hackathon/event-contracts/detail).
 
@@ -18,7 +18,7 @@ Pulse fixes it at the layer where it lives: onchain.
 
 ## How it works
 
-A Pulse session is a per-user contract that holds your collateral and your positions under limits you set. It subscribes to market settlement through Somnia's Reactivity precompile at `0x0100`. When a window resolves, validators invoke the session's handler directly:
+A Pulse session is a per-user contract that holds your collateral and your positions under limits you set. It has a subscription path for market settlement through Somnia's Reactivity precompile at `0x0100`; handler redemptions are shown only after their transaction hash is observed:
 
 ```
 Binary market resolves
@@ -56,7 +56,7 @@ Because the session holds the outcome tokens itself, there is no operator delega
 
 - Winnings and voids redeemed automatically on resolution
 - Autopilot can roll into the next window under the same limits
-- Every automatic action links to its tx hash, marked "no signature required"
+- Every automatic action links to its tx hash once observed
 
 Direct mode is also available for users who want to keep positions in their own wallet, with a manual claim-all across every redeemable market.
 
@@ -189,7 +189,7 @@ docs/                 PRD, demo, screenshots
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Use of Event Contracts and SDKs | `lib/markets.ts`. Full path: discover, status gate, book, order, cancel, redeem.                                                               |
 | Technical implementation        | `contracts/PulseSession.sol` and its Foundry tests. Precompile-gated handler, onchain policy, no keeper infrastructure anywhere in the repo.   |
-| Novelty                         | Settlement does not pay you. Pulse makes validators pay you. Watch beat 3 of the video: a redemption tx with no signature prompt.              |
+| Novelty                         | Settlement does not pay you. Pulse makes validators pay you. Watch beat 3 of the video: a handler redemption tx linked beside settlement.      |
 | UX                              | One screen, one window, one decision. The countdown is the primary object. The best interaction here is the one the user never has to perform. |
 | Ecosystem                       | Turns a one-off call into a session, which is more windows played per user.                                                                    |
 

@@ -45,7 +45,11 @@ export function MarketsGrid() {
       {filtered.length === 0 ? (
         <StateNotice
           title="No windows match"
-          body="Try a wider filter. New windows list every few minutes."
+          body={
+            filter.window === "15m"
+              ? "No live 15m windows are available right now."
+              : "Try a wider filter. New windows list every few minutes."
+          }
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

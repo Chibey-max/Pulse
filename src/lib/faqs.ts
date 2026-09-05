@@ -27,9 +27,9 @@ export const FAQS: readonly FaqItem[] = [
       "Yes. Withdraw is never blocked by an armed session policy. You can disarm or withdraw mid-window, after expiry, or at any point in a run.",
   },
   {
-    question: "How do winnings reach me without a signature?",
+    question: "How do session redemptions show up?",
     answer:
-      "A session contract subscribes to market settlement through Somnia's Reactivity precompile. When a window resolves, validators invoke the session's handler directly, which redeems the winning outcome tokens and credits your session balance. You sign once when you open the session and never again.",
+      "A session contract has a Reactivity subscription path for market-finalization events. Pulse only labels a handler redemption after the activity tape has a real transaction hash for it.",
   },
   {
     question: "What happens when a market is voided?",
@@ -44,7 +44,7 @@ export const FAQS: readonly FaqItem[] = [
   {
     question: "Do I need to keep a tab open?",
     answer:
-      "No. There is no polling service, no keeper bot, and no browser tab requirement. Once a session is armed you can close everything; settlement and any autopilot roll happen onchain.",
+      "Direct mode needs you back for claim-all. Session mode is built around the onchain handler path; the tape only shows validator-handled redemption after a real handler hash is observed.",
   },
   {
     question: "Why testnet?",

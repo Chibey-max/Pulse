@@ -180,7 +180,7 @@ Direct mode alone is a complete, submittable product. If the contract track slip
 4. `PulseSession` subscribes to the settlement event via `0x0100` and inherits the handler interface.
 5. `onEvent` redeems winning and void ids and credits the session balance.
 6. Withdraw at any time, no lock.
-7. UI proof surface: the settlement tx and the redemption tx are both linked, showing the user never signed the second one.
+7. UI proof surface: the settlement tx and the redemption tx are both linked when observed.
 
 ### 6.3 Should ship (P1) if P0 is green by Day 4
 
@@ -232,7 +232,7 @@ There is no sentiment model, no LLM, no signal. Anything smarter is post-submiss
 1. Window locks. Place button dies, cancel still works on residuals.
 2. Market resolves. The user does nothing.
 3. Validators invoke `onEvent`. Winning ids are redeemed. Session balance updates.
-4. UI shows both hashes: the settlement tx, and the redemption tx the user never signed.
+4. UI shows both hashes: the settlement tx, and the handler redemption tx when observed.
 5. If autopilot is armed, the next window's order appears in the tape with its own hash.
 
 ### 7.4 Close out
@@ -293,7 +293,7 @@ Top bar: Pulse mark, network pill, wallet, claim badge (count of redeemable mark
 
 ### 9.2 Activity
 
-Reverse-chronological: placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows carry a distinct marker and the note "no signature required." Every row links to `marketId` and to the explorer.
+Reverse-chronological: placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows carry a distinct marker once a handler hash exists. Every row links to `marketId` and to the explorer.
 
 ### 9.3 Claim sheet (direct mode)
 
@@ -447,7 +447,7 @@ On connect and on a 15s tick: load markets including recently settled, filter to
 - Up and Down stay those words. They match DreamDEX.
 - Helper always repeats capped risk: "You can only lose the stake."
 - Session copy always states the cap first: "200 budget · 25 max per window · 4 windows."
-- Auto rows in the tape say "no signature required," never "automatic profit."
+- Auto rows in the tape only claim validator handling when a handler hash exists, never "automatic profit."
 - Time is local; the countdown is UTC-anchored to market expiry.
 
 Visual direction: dark and dense, one accent (green Up, red Down) against deep navy, Space Grotesk and JetBrains Mono. It should read as a trading instrument, not a marketing site. Do not clone the DoraHacks page.
@@ -507,7 +507,7 @@ Record both answers in the decision log the same day.
 2. **0:15–0:35** Pulse home. Live ETH 15m, strike, implied, countdown running.
 3. **0:35–1:05** Connect, size 25, tap Up, tx hash, position on the card.
 4. **1:05–1:35** Start a session: 200 budget, 25 per window, 4 windows. One confirm. Policy shown in plain words.
-5. **1:35–2:10** The beat that wins it. Cut to a window resolving. Hands off the keyboard. The redemption tx appears with no signature prompt. Show both hashes on the explorer: the settlement, and the redeem that Somnia validators triggered. Say the number out loud: zero signatures.
+5. **1:35–2:10** The beat that wins it. Cut to a window resolving. Hands off the keyboard. Show both hashes on the explorer when available: the settlement, and the redeem that Somnia validators triggered.
 6. **2:10–2:30** Autopilot places the next window's call. Activity tape shows the run. Withdraw returns everything.
 7. **2:30–2:40** What is next: mainnet, MCP surface so agents can drive a session, richer rules.
 

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { SessionState } from "@/lib/types";
 import { Card, CountUp, CtaButton, CtaLink } from "@/components/ui";
+import { ActionStatusNotice } from "@/components/app/ActionStatusNotice";
 import { Skeleton } from "@/components/app/StateNotice";
 import { useSession } from "@/lib/app-data";
 import { useSessionActions } from "@/lib/app-data/session-writes";
-import { formatAmount } from "@/lib/format";
 
 // === Copy
 
@@ -24,8 +24,8 @@ const RULE_COPY: Record<SessionState["rule"], string> = {
 */
 export function SessionCard() {
   const { data: session, isLoading } = useSession();
-  const { disarm, withdraw, status } = useSessionActions();
-  const [showWithdraw, setShowWithdraw] = useState<boolean>(false);
+  const { deposit, disarm, withdraw, status } = useSessionActions();
+  const [transferMode, setTransferMode] = useState<"fund" | "withdraw" | null>(null);
   const [amount, setAmount] = useState<string>("");
 
   if (isLoading) {
@@ -37,8 +37,7 @@ export function SessionCard() {
       <Card className="flex flex-col gap-3 p-5">
         <h2 className="text-body text-text-primary font-medium">No session</h2>
         <p className="text-caption text-text-secondary">
-          Open a session to set a budget and hard limits, then let settlement redeem your winnings
-          without another signature.
+          Open a session to set a budget and hard limits for session-held positions.
         </p>
         <CtaLink variant="primary" size="sm" href="/session/new" className="self-start">
           Start session
@@ -63,7 +62,7 @@ export function SessionCard() {
       <div className="flex flex-col gap-1.5">
         <div className="text-caption font-mono-numbers flex items-baseline justify-between font-mono">
           <CountUp value={remaining} suffix=" tUSDC" className="text-text-primary" />
-          <span className="text-text-muted">of {formatAmount(budget)}</span>
+          <span className="text-text-muted">vault balance</span>
         </div>
         <div className="rounded-pill bg-bg-elevated h-1.5 w-full overflow-hidden">
           <div className="rounded-pill bg-up h-full" style={{ width: `${pct}%` }} />
@@ -86,52 +85,88 @@ export function SessionCard() {
       </dl>
 
       <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <CtaButton variant="secondary" size="sm" onClick={disarm}>
             Disarm
           </CtaButton>
-          <CtaButton variant="secondary" size="sm" onClick={() => setShowWithdraw((open) => !open)}>
+          <CtaButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setTransferMode((mode) => (mode === "fund" ? null : "fund"))}
+          >
+            Fund
+          </CtaButton>
+          <CtaButton
+            variant="secondary"
+            size="sm"
+            onClick={() => setTransferMode((mode) => (mode === "withdraw" ? null : "withdraw"))}
+          >
             Withdraw
           </CtaButton>
         </div>
 
-        {showWithdraw ? (
+        {transferMode ? (
           <div className="flex items-center gap-2">
             <input
               type="number"
               min={1}
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
-              placeholder="Amount"
+              placeholder={transferMode === "fund" ? "Fund amount" : "Withdraw amount"}
               className="border-border-bright bg-bg-elevated text-caption font-mono-numbers text-text-primary focus-visible:border-signal w-full rounded-lg border px-3 py-1.5 font-mono outline-none"
             />
             <CtaButton
               variant="primary"
               size="sm"
               disabled={!amount}
-              onClick={() => withdraw(Number(amount))}
+              onClick={() =>
+                transferMode === "fund" ? deposit(Number(amount)) : withdraw(Number(amount))
+              }
             >
-              Confirm
+              {transferMode === "fund" ? "Fund" : "Confirm"}
             </CtaButton>
           </div>
         ) : null}
 
-        {status.unavailable ? (
-          <p className="text-micro text-text-muted font-mono">
-            Session contracts are not deployed on this environment yet.
-          </p>
-        ) : status.phase !== "idle" ? (
-          <p className="text-micro text-text-secondary font-mono">
-            {status.phase === "disarming"
-              ? "Disarming…"
-              : status.phase === "withdrawing"
-                ? "Withdrawing…"
-                : status.phase === "done"
-                  ? "Done."
-                  : "Working…"}
-          </p>
+        {remaining <= 0 ? (
+          <ActionStatusNotice
+            tone="info"
+            title="Fund the session before calling"
+            detail="This wallet has a session clone, so calls route through the session contract. The vault needs tUSDC before it can place a call."
+          />
         ) : null}
-        {status.error ? <p className="text-micro text-down font-mono">{status.error}</p> : null}
+
+        {status.unavailable ? (
+          <ActionStatusNotice
+            tone="info"
+            title="Session contracts unavailable"
+            detail="This environment is missing the deployed session factory."
+          />
+        ) : status.phase !== "idle" ? (
+          <ActionStatusNotice
+            tone={
+              status.phase === "error" ? "error" : status.phase === "done" ? "success" : "pending"
+            }
+            title={
+              status.phase === "disarming"
+                ? "Disarming session"
+                : status.phase === "withdrawing"
+                  ? "Withdrawing from session"
+                  : status.phase === "done"
+                    ? "Session action confirmed"
+                    : status.phase === "error"
+                      ? "Session action stopped"
+                      : "Working"
+            }
+            detail={status.error}
+            hint={
+              status.phase === "error"
+                ? "Nothing else was submitted. You can adjust and try again."
+                : undefined
+            }
+            hash={status.hash}
+          />
+        ) : null}
       </div>
     </Card>
   );

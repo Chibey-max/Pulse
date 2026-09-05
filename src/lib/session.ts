@@ -5,6 +5,7 @@ import {
 } from "@somnia-chain/markets-sdk/reactivity";
 import type { SomniaMarkets } from "@somnia-chain/markets-sdk";
 import type { Address, Hex, WalletClient } from "viem";
+import { zeroAddress } from "viem";
 import { SOMNIA_REACTIVITY_PRECOMPILE } from "./chain";
 import type { SessionPolicyInput, SessionRule } from "./types";
 
@@ -135,6 +136,40 @@ export const pulseSessionAbi = [
       { name: "credited", type: "uint256", indexed: false },
     ],
   },
+  { type: "error", name: "NotOwner", inputs: [] },
+  { type: "error", name: "MarketNotAllowed", inputs: [{ name: "marketId", type: "bytes32" }] },
+  { type: "error", name: "MarketNotTrading", inputs: [{ name: "marketId", type: "bytes32" }] },
+  {
+    type: "error",
+    name: "StakeTooHigh",
+    inputs: [
+      { name: "stake", type: "uint256" },
+      { name: "maxStakePerWindow", type: "uint256" },
+    ],
+  },
+  { type: "error", name: "SessionExpired", inputs: [] },
+  { type: "error", name: "WindowLimitReached", inputs: [] },
+  { type: "error", name: "TransferFailed", inputs: [] },
+  { type: "error", name: "UnknownMarket", inputs: [{ name: "marketId", type: "bytes32" }] },
+  { type: "error", name: "PlaceRejected", inputs: [] },
+  { type: "error", name: "InvalidPrice", inputs: [] },
+  { type: "error", name: "InvalidSide", inputs: [{ name: "side", type: "uint8" }] },
+  {
+    type: "error",
+    name: "InvalidQuantity",
+    inputs: [
+      { name: "quantity", type: "uint256" },
+      { name: "lotSize", type: "uint256" },
+    ],
+  },
+  {
+    type: "error",
+    name: "QuantityBelowMinimum",
+    inputs: [
+      { name: "quantity", type: "uint256" },
+      { name: "minQuantity", type: "uint256" },
+    ],
+  },
 ] as const;
 
 export const pulseMarketAdapterAbi = [
@@ -161,6 +196,11 @@ export const pulseMarketAdapterAbi = [
   },
 ] as const;
 
+export const MARKET_FINALIZED_TOPIC =
+  "0x8f396ac6cf2e01887362e2b39d8e56860042c604e5b1b481c87e6d9f90006e08" as const;
+export const SESSION_ON_EVENT_SELECTOR = "0x0bde80f3" as const;
+const ZERO_TOPIC = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
+
 export function encodeRule(rule: SessionPolicyInput["rule"]) {
   if (rule === "stop-on-loss") return 2;
   return rule === "martingale-off" ? 1 : 0;
@@ -186,17 +226,21 @@ export async function subscribeSessionToSettlement(
   session: Address,
   settlementEmitter: Address,
   topic0: Hex,
+  marketId: Hex,
 ) {
   const reactivity = createReactivity(exchange.client, { wallet: walletClient });
 
   return unwrap(
-    await reactivity.subscribe({
+    await reactivity.subscribeRaw({
+      eventTopics: [topic0, marketId, ZERO_TOPIC, ZERO_TOPIC],
+      origin: zeroAddress,
+      caller: zeroAddress,
+      emitter: settlementEmitter,
       handlerContractAddress: session,
-      filter: {
-        emitter: settlementEmitter,
-        eventTopics: [topic0],
-      },
-      options: DEFAULT_SUBSCRIPTION_OPTIONS,
+      handlerFunctionSelector: SESSION_ON_EVENT_SELECTOR,
+      ...DEFAULT_SUBSCRIPTION_OPTIONS,
+      isGuaranteed: false,
+      isCoalesced: false,
     }),
   );
 }

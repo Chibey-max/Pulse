@@ -46,7 +46,7 @@ export default function OpengraphImage() {
       </div>
 
       <span style={{ fontSize: 22, color: "#9aa6bd" }}>
-        Call the next candle. Settlement pays you, with no signature.
+        Call the next candle. Track live BTC and ETH windows.
       </span>
     </div>,
     size,

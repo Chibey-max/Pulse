@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getCollateral, SOMNIA_MAINNET_CHAIN_ID, SOMNIA_SHANNON_CHAIN_ID } from "@/lib/chain";
+import { formatMarketId } from "@/lib/format";
 import { encodeRule, isReactivityCaller, toContractPolicy } from "@/lib/session";
 
 describe("pulse chain config", () => {
@@ -44,5 +45,19 @@ describe("reactivity caller guard", () => {
   it("recognizes the Somnia reactivity precompile address", () => {
     expect(isReactivityCaller("0x0000000000000000000000000000000000000100")).toBe(true);
     expect(isReactivityCaller("0x0000000000000000000000000000000000000001")).toBe(false);
+  });
+});
+
+describe("market id display", () => {
+  it("shows the meaningful suffix for padded bytes32 ids", () => {
+    expect(
+      formatMarketId("0x0000000000000000000000000000000000000000000000000000000000014612"),
+    ).toBe("#83474");
+  });
+
+  it("keeps ordinary hashes recognizable", () => {
+    expect(formatMarketId("0x1234567890abcdef1234567890abcdef1234567890abcdef")).toBe(
+      "0x123456...abcdef",
+    );
   });
 });

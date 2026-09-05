@@ -1,9 +1,14 @@
-allowBuilds:
-  unrs-resolver: set this to true or false
-
 # pnpm settings for this single-package repo (pnpm 11 reads them here, not package.json).
 
-# Packages allowed to run install/build scripts (pnpm blocks these by default).
+# Packages allowed to run install/build scripts (pnpm blocks these by default and fails
+# the install until each one is answered). pnpm 11 reads `allowBuilds`; the older
+# `onlyBuiltDependencies` list below is kept for pnpm 10 and earlier.
+allowBuilds:
+  unrs-resolver: true
+  "@tailwindcss/oxide": true
+  esbuild: true
+  sharp: true
+
 onlyBuiltDependencies:
   - unrs-resolver
   - "@tailwindcss/oxide"

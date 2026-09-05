@@ -6,7 +6,7 @@ export const SITE = {
   name: "Pulse",
   tagline: "Your winnings come to you.",
   description:
-    "Pulse turns a sequence of BTC and ETH Up/Down event-contract windows into one continuous, capped-risk session on Somnia. Call the next candle; validators redeem your winnings when it resolves, with no signature.",
+    "Pulse turns a sequence of BTC and ETH Up/Down event-contract windows into one continuous, capped-risk session on Somnia. Call the next candle, track live windows, and keep risk capped on Shannon testnet.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://pulse.somnia.network",
   author: "Pulse",
 } as const;

@@ -2,16 +2,23 @@
 
 import { useCallback, useState } from "react";
 import { erc20Abi, parseUnits } from "viem";
-import { useAccount, useConfig, useWriteContract } from "wagmi";
+import { useAccount, useConfig, useWalletClient, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQueryClient } from "@tanstack/react-query";
-import { pulseSessionAbi, pulseSessionFactoryAbi, toContractPolicy } from "@/lib/session";
+import { createPulseExchange } from "@/lib/markets";
+import {
+  MARKET_FINALIZED_TOPIC,
+  pulseSessionAbi,
+  pulseSessionFactoryAbi,
+  subscribeSessionToSettlement,
+  toContractPolicy,
+} from "@/lib/session";
 import type { SessionPolicyInput } from "@/lib/types";
-import { SESSION_FACTORY_ADDRESS } from "./config";
+import { BINARY_MODULE_ADDRESS, SESSION_FACTORY_ADDRESS } from "./config";
 import { useCollateralAddress, useCollateralDecimals } from "./collateral";
 
 /*
-  Write layer over PulseSessionFactory + PulseSession. createSession is a three-signature
+  Write layer over PulseSessionFactory + PulseSession. createSession is a three-transaction
   flow (createSession -> approve the returned session -> deposit into that vault) run as a
   linear async state machine: each step awaits its receipt before the next. When the
   factory is absent every action returns early and status.unavailable is true, so
@@ -25,7 +32,15 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 // === Types
 
 export type SessionActionPhase =
-  "idle" | "approving" | "creating" | "depositing" | "withdrawing" | "disarming" | "done" | "error";
+  | "idle"
+  | "approving"
+  | "creating"
+  | "depositing"
+  | "subscribing"
+  | "withdrawing"
+  | "disarming"
+  | "done"
+  | "error";
 
 export interface SessionActionStatus {
   phase: SessionActionPhase;
@@ -51,6 +66,7 @@ export function useSessionActions(): SessionActions {
   const token = useCollateralAddress();
   const decimals = useCollateralDecimals();
   const queryClient = useQueryClient();
+  const { data: walletClient } = useWalletClient();
   const { writeContractAsync } = useWriteContract();
 
   const unavailable: boolean = !SESSION_FACTORY_ADDRESS;
@@ -125,6 +141,23 @@ export function useSessionActions(): SessionActions {
             args: [deposit],
           });
 
+          if (!walletClient) throw new Error("Wallet client is not ready for subscription.");
+
+          setPhase("subscribing");
+          const exchange = createPulseExchange(walletClient);
+          for (const marketId of policy.allowedMarketIds) {
+            const subscriptionHash = await subscribeSessionToSettlement(
+              exchange,
+              walletClient,
+              session,
+              BINARY_MODULE_ADDRESS,
+              MARKET_FINALIZED_TOPIC,
+              marketId,
+            );
+            setHash(subscriptionHash);
+            await waitForTransactionReceipt(config, { hash: subscriptionHash });
+          }
+
           setPhase("done");
           void queryClient.invalidateQueries({ queryKey: ["session", owner] });
           void queryClient.invalidateQueries({ queryKey: ["positions", owner] });
@@ -134,7 +167,18 @@ export function useSessionActions(): SessionActions {
         }
       })();
     },
-    [unavailable, owner, decimals, token, send, readSessionAddress, queryClient, fail],
+    [
+      unavailable,
+      owner,
+      decimals,
+      token,
+      send,
+      readSessionAddress,
+      walletClient,
+      config,
+      queryClient,
+      fail,
+    ],
   );
 
   const runOnSession = useCallback(
@@ -166,16 +210,24 @@ export function useSessionActions(): SessionActions {
 
   const deposit = useCallback(
     (amount: number): void => {
-      runOnSession("depositing", (session) =>
-        send({
+      runOnSession("approving", async (session) => {
+        const deposit = parseUnits(String(amount), decimals);
+        await send({
+          address: token,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [session, deposit],
+        });
+        setPhase("depositing");
+        await send({
           address: session,
           abi: pulseSessionAbi,
           functionName: "deposit",
-          args: [parseUnits(String(amount), decimals)],
-        }),
-      );
+          args: [deposit],
+        });
+      });
     },
-    [runOnSession, send, decimals],
+    [runOnSession, send, decimals, token],
   );
 
   const withdraw = useCallback(

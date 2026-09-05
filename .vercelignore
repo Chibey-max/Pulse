@@ -1,0 +1,17 @@
+# The Foundry side of the repo. Vercel only builds the Next.js app, so none of the
+# contract toolchain, its vendored deps, or its build output needs to be uploaded.
+#
+# Every pattern is root-anchored with a leading slash on purpose: an unanchored `lib/`
+# matches at ANY depth and would also drop `src/lib/`, which the app imports as `@/lib/*`.
+/contracts/
+/test/
+/scripts/
+/lib/
+/out/
+/cache/
+/broadcast/
+/foundry.toml
+/remappings.txt
+
+# Docs and local notes
+/docs/

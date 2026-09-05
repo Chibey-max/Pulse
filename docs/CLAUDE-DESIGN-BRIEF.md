@@ -22,7 +22,7 @@ follow the PRD and call out the conflict.
 
 Pulse turns a sequence of BTC and ETH Up/Down event-contract windows into one
 continuous, capped-risk session: users call the next candle, and Somnia
-validators redeem session winnings when the window resolves without another
+session winnings are redeemed through an observed handler
 signature.
 
 The central product idea is:
@@ -34,8 +34,7 @@ The central marketing claim is:
 > Your winnings come to you.
 
 The most important proof moment is not placing an order. It is showing a market
-resolve, then showing the redemption transaction appear with **no signature
-required**.
+resolve, then showing the redemption transaction appear with a handler hash.
 
 ## Audience and tone
 
@@ -80,7 +79,7 @@ and keep surrounding elements disciplined.
 The design should feel active without becoming noisy. Prefer one orchestrated
 motion system over scattered effects. Consider countdown ticks, a lock-state
 transition, a settlement pulse travelling through the rail, and an activity row
-appearing as "no signature required." Specify reduced-motion alternatives.
+appearing once a handler hash exists. Specify reduced-motion alternatives.
 
 Avoid these common AI-design defaults:
 
@@ -113,8 +112,7 @@ after wallet connection:
 7. `/session/new` — session setup flow for budget, maximum stake, window count,
    allowed pair/duration, expiry, and deterministic rule.
 8. `/session/[address]` — public, read-only proof page showing policy, session
-   balance, window history, settlement/redemption transaction pair, and which
-   actions required no signature.
+   balance, window history, and the settlement/redemption transaction pair.
 9. A claim-all sheet for direct mode and a withdrawal sheet for session mode.
 10. Supporting marketing/legal pages or sections: How it works, Security &
     control, FAQ, Docs/GitHub links, testnet disclosure, footer, privacy, and
@@ -146,10 +144,10 @@ sections. Include:
    user can disarm or withdraw at any time.
 7. A trust/proof section: self-controlled funds, onchain-enforced limits,
    withdrawals never locked, every action linked to an explorer transaction,
-   no keeper bot, and no browser tab required. Phrase only what the attached
+   handler hashes, and no browser tab requirement unless proven. Phrase only what the attached
    product documents support.
 8. An activity-tape moment pairing the market settlement transaction with the
-   reactive redemption transaction and the label **No signature required**.
+   reactive redemption transaction and its handler hash.
 9. An accessible FAQ using real objections from the PRD: What is an event
    contract? What can I lose? Who holds my funds? Can I withdraw anytime? What
    happens when a market is voided? What does autopilot decide? Why testnet?

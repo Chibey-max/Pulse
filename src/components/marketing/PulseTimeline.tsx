@@ -44,8 +44,7 @@ const STEPS: readonly Step[] = [
   {
     key: "redeem",
     label: "Redeem",
-    detail:
-      "Validators invoke your session handler and credit the winnings. No signature required.",
+    detail: "Handler-confirmed redemptions appear on the activity tape with their tx hash.",
     icon: MdCheckCircle,
   },
   {
@@ -68,10 +67,9 @@ const STEP_SECONDS = LAP_SECONDS / STEPS.length;
 // === Rail
 
 /*
-  The signature device. On desktop a settlement pulse travels the rail left to right and
-  swells as it passes the Redeem node, because the no-signature redemption is the moment
-  the whole product turns on. Hidden entirely under reduced motion; the cards still carry
-  the sequence on their own.
+  On desktop a settlement pulse travels the rail left to right and swells as it passes
+  the Redeem node. Hidden entirely under reduced motion; the cards still carry the
+  sequence on their own.
 */
 function Rail() {
   const prefersReduced = usePrefersReducedMotion();

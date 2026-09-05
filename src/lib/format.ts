@@ -32,6 +32,13 @@ export function truncateHex(hex: string, lead = 6, tail = 4): string {
   return `${hex.slice(0, lead)}...${hex.slice(-tail)}`;
 }
 
+export function formatMarketId(marketId: string): string {
+  if (/^0x0+[0-9a-fA-F]+$/.test(marketId)) {
+    return `#${BigInt(marketId).toString()}`;
+  }
+  return truncateHex(marketId, 8, 6);
+}
+
 // === Time
 
 export function formatLocalTime(unixSeconds: number): string {

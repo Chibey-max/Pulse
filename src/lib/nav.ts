@@ -28,6 +28,7 @@ export const FOOTER_PRODUCT_NAV: readonly NavItem[] = [
 export const APP_NAV: readonly NavItem[] = [
   { label: "Home", href: "/app" },
   { label: "Markets", href: "/markets" },
+  { label: "Faucet", href: "/faucet" },
   { label: "Positions", href: "/positions" },
   { label: "Activity", href: "/activity" },
 ];

@@ -17,7 +17,7 @@ export default function NewSessionPage() {
           id="session-new"
           as="h1"
           title="Open a session"
-          description="Set a budget and hard limits. The contract enforces them. One confirm deploys and funds the session."
+          description="Set a budget and hard limits. Setup takes 3 wallet transactions: deploy, approve tUSDC, and fund the session."
         />
         <SessionForm />
       </div>

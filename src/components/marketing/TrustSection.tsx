@@ -21,8 +21,8 @@ const GUARANTEES = [
   },
   {
     icon: MdBlock,
-    title: "No keeper bot",
-    body: "No polling service, no cron, no backend. Settlement runs onchain.",
+    title: "Handler path visible",
+    body: "Validator-handled redemption is only labeled after Pulse has a real handler hash.",
   },
 ] as const;
 

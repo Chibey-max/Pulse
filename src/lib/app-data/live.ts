@@ -753,7 +753,7 @@ async function readActivity(owner?: string): Promise<TapeEntry[]> {
       amount: rawAmount(order.fullQuantity, order.marketInfo?.quoteDecimals ?? 6),
       txHash: order.placedTxHash as `0x${string}`,
       ts: Number(order.placedAtTimestamp),
-      noSignature: session ? account.toLowerCase() === session.toLowerCase() : false,
+      noSignature: false,
     }))
     .sort((a, b) => b.ts - a.ts)
     .slice(0, 25);

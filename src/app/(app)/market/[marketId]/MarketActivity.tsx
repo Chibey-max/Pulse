@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui";
 import { ActivityTape } from "@/components/app";
+import { formatMarketId } from "@/lib/format";
 
 // === Component
 
@@ -15,8 +16,8 @@ export function MarketActivity({ marketId }: { marketId: string }) {
         <span className="text-micro text-text-muted font-mono tracking-wider uppercase">
           Window activity
         </span>
-        <span className="text-micro font-mono-numbers text-text-muted font-mono">
-          {marketId.slice(0, 10)}…
+        <span className="text-micro font-mono-numbers text-text-muted font-mono" title={marketId}>
+          {formatMarketId(marketId)}
         </span>
       </div>
       <ActivityTape limit={6} />

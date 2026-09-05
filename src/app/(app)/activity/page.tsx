@@ -17,7 +17,7 @@ export default function ActivityPage() {
           id="activity"
           as="h1"
           title="Activity"
-          description="Placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows required no signature."
+          description="Placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Handler rows include their own tx hash."
         />
         <Card className="px-5">
           <ActivityTape />

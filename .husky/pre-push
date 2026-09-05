@@ -41,7 +41,7 @@ fi
 
 # 4 Protected branch checks, run when pushing to develop or main
 current_user=$(git config user.email)
-allowed_users="davidilorah@gmail.com musamarch022005@gmail.com"
+allowed_users="davidilorah@gmail.com musamarch022005@gmail.com ilorahdavid126@gmail.com"
 z40=0000000000000000000000000000000000000000
 
 # Vendored trees. These ship with large files we do not control, so the size

@@ -8,7 +8,8 @@ import { ActionRow } from "@/components/app/ActionRow";
 import { MiniBook } from "@/components/app/MiniBook";
 import { Skeleton } from "@/components/app/StateNotice";
 import { useCall } from "@/components/app/hooks";
-import { useMarkets, usePositions } from "@/lib/app-data";
+import { useMarkets, usePositions, useSession } from "@/lib/app-data";
+import { formatMarketId } from "@/lib/format";
 
 // === Types
 
@@ -36,6 +37,7 @@ export function HeroCard({ marketId }: HeroCardProps) {
   const { isConnected } = useAccount();
   const { data: markets, isLoading } = useMarkets();
   const { data: positions } = usePositions();
+  const { data: session, isLoading: isSessionLoading } = useSession();
 
   const market = useMemo(
     () => (markets ? pickMarket(markets, marketId) : undefined),
@@ -61,11 +63,18 @@ export function HeroCard({ marketId }: HeroCardProps) {
     (p) => p.marketId.toLowerCase() === market.marketId.toLowerCase(),
   );
   const tradeable = market.status === "trading";
+  const sessionBalance = session ? Number(session.remaining.replace(/,/g, "")) : undefined;
+  const sessionKnown = !isConnected || !isSessionLoading;
+  const sessionCanTrade = sessionBalance === undefined || sessionBalance > 0;
   const disabledReason = !isConnected
     ? "Connect a wallet on Somnia Shannon testnet to call this window."
-    : !tradeable
-      ? `Window is ${market.status}. Calls are closed.`
-      : undefined;
+    : !sessionKnown
+      ? "Reading session state before enabling calls."
+      : !tradeable
+        ? `Window is ${market.status}. Calls are closed.`
+        : !sessionCanTrade
+          ? "Fund the session vault before placing session calls."
+          : undefined;
 
   return (
     <TiltCard max={3}>
@@ -75,8 +84,8 @@ export function HeroCard({ marketId }: HeroCardProps) {
             <span className="text-caption text-text-secondary font-mono tracking-wider uppercase">
               {market.pair} · {market.window}
             </span>
-            <span className="text-micro text-text-muted font-mono">
-              {market.marketId.slice(0, 10)}…
+            <span className="text-micro text-text-muted font-mono" title={market.marketId}>
+              {formatMarketId(market.marketId)}
             </span>
           </div>
           <StatusChip status={market.status} />
@@ -117,7 +126,7 @@ export function HeroCard({ marketId }: HeroCardProps) {
 
         <ActionRow
           market={market}
-          disabled={!tradeable || !isConnected}
+          disabled={!tradeable || !isConnected || !sessionKnown || !sessionCanTrade}
           disabledReason={disabledReason}
           pending={status === "placing"}
           onCall={call}

@@ -85,7 +85,7 @@ export function ActivityTape({ limit }: { limit?: number }) {
     return (
       <StateNotice
         title="No activity yet"
-        body="Placed orders, fills, settlements, and the redemptions you never signed all show up here."
+        body="Placed orders, fills, settlements, and handler-confirmed redemptions show up here."
       />
     );
   }

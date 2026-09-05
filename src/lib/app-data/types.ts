@@ -38,7 +38,7 @@ export interface TapeEntry {
   amount?: string;
   txHash: Hex;
   ts: number;
-  /* Auto rows carry this: the action the user did not sign. */
+  /* Auto rows carry this only when a handler-originated transaction hash is present. */
   noSignature?: boolean;
 }
 

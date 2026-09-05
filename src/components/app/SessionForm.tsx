@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { parseUnits } from "viem";
 import type { PulsePair, PulseWindow, SessionPolicyInput, SessionRule } from "@/lib/types";
 import { Card, CtaButton } from "@/components/ui";
+import { ActionStatusNotice } from "@/components/app/ActionStatusNotice";
 import { FaucetCard } from "@/components/app/FaucetCard";
 import { useCollateralDecimals } from "@/lib/app-data/collateral";
 import { useMarkets } from "@/lib/app-data";
@@ -93,14 +94,17 @@ export function SessionForm() {
         ? "Creating…"
         : status.phase === "depositing"
           ? "Funding…"
-          : status.phase === "done"
-            ? "Done"
-            : "Deploy and fund session";
+          : status.phase === "subscribing"
+            ? "Subscribing…"
+            : status.phase === "done"
+              ? "Done"
+              : "Start 3-transaction setup";
 
   const deployBusy: boolean =
     status.phase === "approving" ||
     status.phase === "creating" ||
     status.phase === "depositing" ||
+    status.phase === "subscribing" ||
     status.phase === "done";
   const deployDisabled: boolean = deployBusy || (!fallback && allowedMarketIds.length === 0);
 
@@ -223,8 +227,8 @@ export function SessionForm() {
         </span>
         <p className="text-body text-text-primary font-mono">{sentence}</p>
         <p className="text-caption text-text-secondary">
-          Enforced onchain. Disarm and withdraw are always available and never blocked by the armed
-          policy.
+          Opens with 3 wallet transactions: deploy the session, approve tUSDC, then fund the vault.
+          Disarm and withdraw stay available after setup.
         </p>
         <div className="flex flex-wrap items-center gap-3">
           {fallback ? (
@@ -242,20 +246,41 @@ export function SessionForm() {
         </div>
 
         {fallback ? (
-          <p className="text-micro text-text-muted font-mono">
-            Live session contracts are not configured for this environment.
-          </p>
+          <ActionStatusNotice
+            tone="info"
+            title="Session contracts unavailable"
+            detail="Live session contracts are not configured for this environment."
+          />
         ) : status.phase !== "idle" ? (
-          <p className="text-micro text-text-secondary font-mono">
-            {status.phase === "done" ? "Session funded. Redirecting…" : deployLabel}
-          </p>
+          <ActionStatusNotice
+            tone={
+              status.phase === "error" ? "error" : status.phase === "done" ? "success" : "pending"
+            }
+            title={
+              status.phase === "done"
+                ? "Session funded"
+                : status.phase === "error"
+                  ? "Setup stopped"
+                  : deployLabel
+            }
+            detail={status.error}
+            hint={
+              status.phase === "error"
+                ? "Nothing else was submitted after the rejected or failed step."
+                : status.phase === "done"
+                  ? "Redirecting to the app."
+                  : "Keep MetaMask open until this step confirms."
+            }
+            hash={status.hash}
+          />
         ) : allowedMarketIds.length === 0 ? (
-          <p className="text-micro text-down font-mono">
-            No live {policy.pair} {policy.window} windows are available yet. Pick another pair or
-            window.
-          </p>
+          <ActionStatusNotice
+            tone="error"
+            title={`No live ${policy.pair} ${policy.window} windows`}
+            detail="Pulse will not silently substitute another duration."
+            hint="Pick a different pair or window."
+          />
         ) : null}
-        {status.error ? <p className="text-micro text-down font-mono">{status.error}</p> : null}
       </Card>
     </div>
   );

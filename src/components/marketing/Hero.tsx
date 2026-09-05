@@ -28,9 +28,8 @@ export function Hero() {
           </Reveal>
           <Reveal child>
             <p className="text-lead text-text-secondary max-w-xl text-pretty">
-              Call the next BTC or ETH candle in one tap. When the window resolves, Somnia
-              validators redeem your winnings and roll you into the next one, within limits you set.
-              No claim button, no keeper bot, no signature.
+              Call the next BTC or ETH candle in one tap. Pulse shows live windows, capped stake,
+              settlement state, and session limits without inventing handler proof.
             </p>
           </Reveal>
           <Reveal child className="flex flex-wrap items-center gap-3">
