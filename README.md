@@ -18,6 +18,16 @@ pnpm install
 cp .env.example .env.local   # fill in the blanks
 ```
 
+> Next.js resolves env vars in this order — `process.env` first, then
+> `.env.local`, then `.env` — stopping at the first one it finds, **even if that value is an
+> empty string**. If your shell (or an IDE task/terminal profile) already exports
+> `NEXT_PUBLIC_SESSION_FACTORY=` or `NEXT_PUBLIC_MARKET_ADAPTER=` blank, `pnpm dev` will
+> silently pick up the empty value instead of the one in `.env.local`, and the app falls back
+> to its "not configured for this environment" state even though the file looks correct. If a
+> value that's clearly set in `.env.local` isn't taking effect, run
+> `env | grep NEXT_PUBLIC_` to check for a stray blank export, `unset` it, and restart
+> `pnpm dev` from a clean shell.
+
 ## Scripts
 
 | Script                              | What it does                                            |

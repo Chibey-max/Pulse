@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { useWalletClient } from "wagmi";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/toast";
-import type { Redeemable } from "@/lib/app-data";
 import { claimAll as claimAllWrite } from "@/lib/app-data/writes";
 import { getCollateral } from "@/lib/chain";
 import { decodeTxError } from "@/lib/tx";
@@ -15,7 +14,13 @@ import { formatAmount } from "@/lib/format";
 export type ClaimStatus = "idle" | "claiming" | "success" | "error";
 
 export interface UseClaimAll {
-  claimAll: (redeemable?: Redeemable[]) => Promise<void>;
+  /*
+    No list param: the UI's `Redeemable` shape (formatted amounts, "up"/"down" side) can't
+    be forwarded to the write layer's chain-native `RedeemableMarket` (raw amount,
+    outcomeIdx) without a re-derivation that risks drift from what's actually claimable
+    onchain. claimAllWrite's own `getClaimable` read is the deliberate source of truth.
+  */
+  claimAll: () => Promise<void>;
   status: ClaimStatus;
 }
 

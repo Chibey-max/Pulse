@@ -3,7 +3,7 @@ import { AppLogo } from "@/components/shared/AppLogo";
 import {
   DREAMDEX_DOCS_URL,
   FOOTER_PRODUCT_NAV,
-  GITHUB_URL,
+  // GITHUB_URL,
   type NavItem,
   SOMNIA_URL,
 } from "@/lib/nav";
@@ -37,7 +37,7 @@ const COLUMNS: readonly FooterColumn[] = [
   {
     title: "Resources",
     items: [
-      { label: "GitHub", href: GITHUB_URL, external: true },
+      // { label: "GitHub", href: GITHUB_URL, external: true },
       { label: "Terms", href: "/terms" },
       { label: "Privacy", href: "/privacy" },
     ],

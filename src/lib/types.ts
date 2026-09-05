@@ -26,6 +26,10 @@ export type Position = {
   status: WindowStatus;
   redeemable: boolean;
   heldBy: "wallet" | "session";
+  /* Actual redeemable value once resolved/voided — winner minus fee, half on void, zero on
+     loss. Undefined when not yet computable (e.g. still trading). Never assume 1:1 with
+     `contracts`: a losing or voided position is worth less than its face value. */
+  expectedPayout?: number;
 };
 
 export type SessionState = {

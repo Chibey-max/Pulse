@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { parseUnits } from "viem";
 import { useAccount, useConfig, useWalletClient, useWriteContract } from "wagmi";
-import { waitForTransactionReceipt } from "wagmi/actions";
+import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { useQueryClient } from "@tanstack/react-query";
 import type { UnifiedOrder } from "@somnia-chain/markets-sdk";
 import { useToast } from "@/components/ui/toast";
@@ -93,6 +93,33 @@ export function useCall(market: MarketCard | undefined): UseCall {
 
       try {
         if (session) {
+          const isAllowed = await readContract(config, {
+            address: session.address,
+            abi: pulseSessionAbi,
+            functionName: "allowedMarket",
+            args: [market.marketId],
+          });
+
+          if (!isAllowed) {
+            update(toastId, {
+              title: "Extending session…",
+              description: "This window rolled since the session was funded — allowing it once.",
+              variant: "pending",
+            });
+            const extendHash = await writeContractAsync({
+              address: session.address,
+              abi: pulseSessionAbi,
+              functionName: "addAllowedMarket",
+              args: [[market.marketId]],
+            });
+            await waitForTransactionReceipt(config, { hash: extendHash });
+            update(toastId, {
+              title: "Placing your call…",
+              description: `${side.toUpperCase()} · ${formatAmount(stake)} tUSDC · IOC`,
+              variant: "pending",
+            });
+          }
+
           const txHash = await writeContractAsync({
             address: session.address,
             abi: pulseSessionAbi,

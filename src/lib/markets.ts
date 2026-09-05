@@ -81,13 +81,17 @@ export async function placeMarketableCall(
     throw new Error(`Market ${market.marketId} is not trading`);
   }
 
-  const outcomeSymbol = getOutcomeSymbol(market.symbol, side);
+  await exchange.loadMarkets();
+
+  const { marketSymbol } = exchange.market(market.marketId);
+  const outcomeSymbol = getOutcomeSymbol(marketSymbol, side);
   return exchange.createOrder(outcomeSymbol, "market", "buy", stake, undefined, {
     timeInForce: "IOC",
   });
 }
 
 export async function cancelOrder(exchange: SomniaMarkets, orderId: string, outcomeSymbol: string) {
+  await exchange.loadMarkets();
   return exchange.cancelOrder(orderId, outcomeSymbol);
 }
 
@@ -104,6 +108,10 @@ export interface LiveWindow extends MarketCard {
   /* Kept off MarketCard so components stay presentational; the live book path needs them. */
   poolAddress: `0x${string}`;
   quoteDecimals: number;
+  /* Settlement outcome, for computing an actual redeemable payout rather than assuming
+     every held contract is worth its face value (see estPayoutFor in live.ts). */
+  winningOutcome: number | null;
+  voided: boolean;
 }
 
 /*
@@ -195,6 +203,8 @@ function toLiveWindow(row: BinaryMarket): LiveWindow {
     strike: "",
     poolAddress: row.poolAddress,
     quoteDecimals: row.quoteDecimals,
+    winningOutcome: row.winningOutcome,
+    voided: row.voided,
   };
 }
 

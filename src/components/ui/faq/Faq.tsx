@@ -76,7 +76,7 @@ export function Faq({ items, singleOpen = true, defaultOpen = 0, className }: Fa
                 aria-expanded={isOpen}
                 aria-controls={panelId}
                 onClick={() => toggle(index)}
-                className="flex w-full items-center justify-between gap-6 py-5 text-left"
+                className="flex w-full items-center justify-between gap-6 p-5 text-left"
               >
                 <span className="text-h3 text-text-primary flex items-baseline gap-3 font-medium">
                   <span className="text-caption text-text-muted font-mono">
@@ -107,7 +107,7 @@ export function Faq({ items, singleOpen = true, defaultOpen = 0, className }: Fa
               )}
             >
               <div className="overflow-hidden">
-                <p className="text-body text-text-secondary max-w-2xl pb-5">{item.answer}</p>
+                <p className="text-body text-text-secondary max-w-2xl px-5 pb-5">{item.answer}</p>
               </div>
             </div>
           </li>

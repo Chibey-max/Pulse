@@ -12,7 +12,6 @@ import { motion } from "motion/react";
 import { Reveal, Section, SectionHeading } from "@/components/ui";
 import { EASE_OUT } from "@/lib/motion";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
-import { cn } from "@/lib/cn";
 
 // === Data
 
@@ -21,8 +20,6 @@ interface Step {
   label: string;
   detail: string;
   icon: typeof MdBolt;
-  /* The climax: the redemption the user never signs. */
-  climax?: boolean;
 }
 
 const STEPS: readonly Step[] = [
@@ -50,7 +47,6 @@ const STEPS: readonly Step[] = [
     detail:
       "Validators invoke your session handler and credit the winnings. No signature required.",
     icon: MdCheckCircle,
-    climax: true,
   },
   {
     key: "roll",
@@ -62,6 +58,12 @@ const STEPS: readonly Step[] = [
 
 // Redeem is the 4th of 5 nodes; its column centre sits at ~70% across the rail.
 const CLIMAX_POSITION = 0.7;
+
+// One lap of the chasing glow: each card gets an equal slice, so the whole row cycles
+// through 01 -> 05 forever. Every card runs the SAME period, just phase-offset by its
+// index — that keeps them perfectly in sync lap after lap without re-triggering JS.
+const LAP_SECONDS = STEPS.length * 1.1;
+const STEP_SECONDS = LAP_SECONDS / STEPS.length;
 
 // === Rail
 
@@ -106,6 +108,33 @@ function Rail() {
 
 // === Component
 
+/*
+  The chasing glow, one per card: fades in a bit after its own turn starts, fades out
+  before the next card's turn peaks, so adjacent cards overlap during the handoff instead
+  of hard-cutting — that overlap is what reads as the glow "moving" rather than blinking.
+  Off entirely under reduced motion, same as the rail.
+*/
+function CardGlow({ index }: { index: number }) {
+  const prefersReduced = usePrefersReducedMotion();
+  if (prefersReduced) return null;
+
+  return (
+    <motion.div
+      aria-hidden="true"
+      className="border-signal/50 bg-signal/8 pointer-events-none absolute inset-0 rounded-lg border shadow-[0_0_24px_-8px_var(--color-signal)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: [0, 1, 0, 0] }}
+      transition={{
+        duration: LAP_SECONDS,
+        times: [0, 0.15, 0.35, 1],
+        ease: "easeInOut",
+        repeat: Infinity,
+        delay: index * STEP_SECONDS,
+      }}
+    />
+  );
+}
+
 export function PulseTimeline() {
   return (
     <Section id="how-it-works" panel="deep" overlap>
@@ -124,24 +153,11 @@ export function PulseTimeline() {
               const Icon = step.icon;
               return (
                 <Reveal child key={step.key}>
-                  <div
-                    className={cn(
-                      "flex h-full flex-col gap-3 rounded-lg border p-4",
-                      step.climax
-                        ? "border-signal/50 bg-signal/8 shadow-[0_0_24px_-8px_var(--color-signal)]"
-                        : "border-border bg-bg-panel",
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-2">
+                  <div className="border-border bg-bg-panel relative flex h-full flex-col gap-3 rounded-lg border p-4">
+                    <CardGlow index={index} />
+                    <div className="relative flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "flex size-8 items-center justify-center rounded-md",
-                            step.climax
-                              ? "bg-signal/15 text-signal"
-                              : "bg-bg-elevated text-text-secondary",
-                          )}
-                        >
+                        <span className="bg-bg-elevated text-text-secondary flex size-8 items-center justify-center rounded-md">
                           <Icon size={16} aria-hidden="true" />
                         </span>
                         <span className="text-micro text-text-muted font-mono tracking-wider uppercase">
@@ -156,10 +172,10 @@ export function PulseTimeline() {
                         />
                       ) : null}
                     </div>
-                    <h3 className="font-display text-h3 text-text-primary font-semibold">
+                    <h3 className="font-display text-h3 text-text-primary relative font-semibold">
                       {step.label}
                     </h3>
-                    <p className="text-caption text-text-secondary">{step.detail}</p>
+                    <p className="text-caption text-text-secondary relative">{step.detail}</p>
                   </div>
                 </Reveal>
               );

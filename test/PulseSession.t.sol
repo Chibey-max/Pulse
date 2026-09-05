@@ -83,6 +83,42 @@ contract PulseSessionTest is Test {
         session.place(unknownMarket, 0, 10e6);
     }
 
+    function testAddAllowedMarketExtendsAllowList() public {
+        vm.prank(owner);
+        session.deposit(100e6);
+
+        bytes32 rolledMarket = keccak256("ETH-15m-rolled");
+        adapter.setStatus(rolledMarket, IPulseMarketAdapter.MarketStatus.Trading);
+
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(PulseSession.MarketNotAllowed.selector, rolledMarket)
+        );
+        session.place(rolledMarket, 0, 10e6);
+
+        bytes32[] memory toAdd = new bytes32[](1);
+        toAdd[0] = rolledMarket;
+
+        vm.prank(owner);
+        session.addAllowedMarket(toAdd);
+
+        assertTrue(session.allowedMarket(rolledMarket));
+
+        vm.prank(owner);
+        session.place(rolledMarket, 0, 10e6);
+
+        assertEq(session.windowsUsed(), 1);
+    }
+
+    function testAddAllowedMarketRequiresOwner() public {
+        bytes32[] memory toAdd = new bytes32[](1);
+        toAdd[0] = keccak256("ETH-15m-rolled");
+
+        vm.prank(address(0xB0B));
+        vm.expectRevert(PulseSession.NotOwner.selector);
+        session.addAllowedMarket(toAdd);
+    }
+
     function testPlaceRejectsNonTradingMarket() public {
         vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(PulseSession.MarketNotTrading.selector, marketOne));

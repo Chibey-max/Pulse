@@ -427,3 +427,10 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+.vercel
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
+
+# Foundry dry-run simulation logs (real deployments are kept)
+broadcast/*/*/dry-run/

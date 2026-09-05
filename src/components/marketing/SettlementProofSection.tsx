@@ -19,7 +19,7 @@ export function SettlementProofSection() {
           description="When the window resolves, the redemption appears in your activity tape on its own explorer hash. No marketing hashes are fabricated."
         />
 
-        <Card className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <Card className="flex flex-col items-start gap-5 p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <div className="flex flex-col gap-2">
             <span className="text-body text-text-primary flex items-center gap-2">
               Live activity appears after wallet connection
@@ -30,7 +30,7 @@ export function SettlementProofSection() {
               for the connected wallet.
             </span>
           </div>
-          <CtaLink href="/activity" variant="secondary">
+          <CtaLink href="/activity" variant="secondary" className="shrink-0">
             Open live activity
           </CtaLink>
         </Card>

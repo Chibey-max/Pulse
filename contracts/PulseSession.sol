@@ -41,6 +41,7 @@ contract PulseSession is ISomniaEventHandler {
     );
     event Deposited(address indexed owner, uint256 amount);
     event Placed(bytes32 indexed marketId, uint8 side, uint256 stake, bytes32 orderId);
+    event MarketAllowed(bytes32 indexed marketId);
     event Redeemed(bytes32 indexed marketId, uint256 credited);
     event RedeemFailed(bytes32 indexed marketId, bytes reason);
     event Disarmed();
@@ -101,6 +102,20 @@ contract PulseSession is ISomniaEventHandler {
         }
 
         emit Initialized(owner_, collateral_, marketAdapter_);
+    }
+
+    /*
+     * Owner-signed top-up of the allow-list. Rotating windows (e.g. every 15 minutes) mint a
+     * fresh marketId per window, so a one-time snapshot at createSession() goes stale as soon
+     * as the window rolls. This keeps the allow-list as the enforcement mechanism — every
+     * market still needs an explicit, owner-signed grant — while letting the owner extend it
+     * over the session's lifetime instead of only once at deploy time.
+     */
+    function addAllowedMarket(bytes32[] calldata marketIds) external onlyOwner {
+        for (uint256 i = 0; i < marketIds.length; i++) {
+            allowedMarket[marketIds[i]] = true;
+            emit MarketAllowed(marketIds[i]);
+        }
     }
 
     function deposit(uint256 amount) external onlyOwner nonReentrant {

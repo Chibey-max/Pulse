@@ -58,11 +58,7 @@ export function ClaimPanel() {
         </span>
       </div>
 
-      <CtaButton
-        variant="primary"
-        onClick={() => claimAll(redeemable)}
-        disabled={status === "claiming"}
-      >
+      <CtaButton variant="primary" onClick={() => claimAll()} disabled={status === "claiming"}>
         {status === "claiming" ? "Claiming…" : "Claim all"}
       </CtaButton>
     </Card>

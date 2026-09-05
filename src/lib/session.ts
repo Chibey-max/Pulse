@@ -80,6 +80,20 @@ export const pulseSessionAbi = [
   },
   {
     type: "function",
+    name: "allowedMarket",
+    stateMutability: "view",
+    inputs: [{ name: "marketId", type: "bytes32" }],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    type: "function",
+    name: "addAllowedMarket",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "marketIds", type: "bytes32[]" }],
+    outputs: [],
+  },
+  {
+    type: "function",
     name: "place",
     stateMutability: "nonpayable",
     inputs: [
@@ -103,6 +117,24 @@ export const pulseSessionAbi = [
     inputs: [{ name: "amount", type: "uint256" }],
     outputs: [],
   },
+  {
+    type: "event",
+    name: "Placed",
+    inputs: [
+      { name: "marketId", type: "bytes32", indexed: true },
+      { name: "side", type: "uint8", indexed: false },
+      { name: "stake", type: "uint256", indexed: false },
+      { name: "orderId", type: "bytes32", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "Redeemed",
+    inputs: [
+      { name: "marketId", type: "bytes32", indexed: true },
+      { name: "credited", type: "uint256", indexed: false },
+    ],
+  },
 ] as const;
 
 export const pulseMarketAdapterAbi = [
@@ -116,6 +148,16 @@ export const pulseMarketAdapterAbi = [
       { name: "side", type: "uint8" },
     ],
     outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "event",
+    name: "OutcomeRecorded",
+    inputs: [
+      { name: "holder", type: "address", indexed: true },
+      { name: "marketId", type: "bytes32", indexed: true },
+      { name: "outcomeIdx", type: "uint8", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
   },
 ] as const;
 
