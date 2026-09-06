@@ -8,7 +8,7 @@ import { somniaShannon } from "@somnia-chain/markets-sdk/chains";
 const RPC = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.infra.testnet.somnia.network";
 const client = createPublicClient({ chain: somniaShannon, transport: http(RPC) });
 
-const FACTORY = "0x26d0a38db17ac44ed91a90d68a3fdd7b366bce84";
+const FACTORY = "0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84";
 const SESSION = "0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA";
 const MODULE = "0x3ecC694Cef705358864a646142ac17A90E29e388";
 const PRECOMPILE = "0x0000000000000000000000000000000000000100";
