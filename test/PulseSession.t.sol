@@ -151,7 +151,7 @@ contract PulseSessionTest is Test {
 
     function testOnEventOnlyAcceptsReactivityPrecompile() public {
         vm.expectRevert(PulseSession.OnlyReactivityPrecompile.selector);
-        session.onEvent("");
+        session.onEvent(address(0), new bytes32[](0), "");
     }
 
     function testOnEventIsolatesFailedRedeems() public {
@@ -172,7 +172,7 @@ contract PulseSessionTest is Test {
         adapter.setFailRedeem(marketTwo, true);
 
         vm.prank(session.SOMNIA_REACTIVITY_PRECOMPILE());
-        session.onEvent("");
+        session.onEvent(address(0), new bytes32[](0), "");
 
         assertEq(collateral.balanceOf(address(session)), 110e6);
         assertEq(adapter.payouts(marketOne), 0);

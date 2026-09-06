@@ -198,7 +198,13 @@ export const pulseMarketAdapterAbi = [
 
 export const MARKET_FINALIZED_TOPIC =
   "0x8f396ac6cf2e01887362e2b39d8e56860042c604e5b1b481c87e6d9f90006e08" as const;
-export const SESSION_ON_EVENT_SELECTOR = "0x0bde80f3" as const;
+/*
+  Selector of ISomniaEventHandler.onEvent(address,bytes32[],bytes) — the signature the
+  Reactivity precompile actually calls. A handler with any other signature accepts a
+  subscription and then silently never fires, so this must track the protocol, not our
+  own contract's convenience.
+*/
+export const SESSION_ON_EVENT_SELECTOR = "0x53edf33d" as const;
 const ZERO_TOPIC = "0x0000000000000000000000000000000000000000000000000000000000000000" as const;
 
 export function encodeRule(rule: SessionPolicyInput["rule"]) {

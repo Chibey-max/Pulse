@@ -139,7 +139,17 @@ contract PulseSession is ISomniaEventHandler {
         emit Placed(marketId, side, stake, orderId);
     }
 
-    function onEvent(bytes calldata) external nonReentrant {
+    /*
+     * Reactivity callback. The signature is fixed by the protocol
+     * (ISomniaEventHandler, selector 0x53edf33d) — see that interface for why an
+     * approximate signature silently never fires.
+     *
+     * The arguments are deliberately unused: the subscription is already scoped to
+     * this session's markets, and a settlement anywhere in the tracked set is reason
+     * enough to sweep all of them. Redeeming a market that has not settled yet is a
+     * no-op the catch below absorbs, so re-checking the payload would buy nothing.
+     */
+    function onEvent(address, bytes32[] calldata, bytes calldata) external nonReentrant {
         if (msg.sender != SOMNIA_REACTIVITY_PRECOMPILE) revert OnlyReactivityPrecompile();
 
         for (uint256 i = 0; i < trackedMarketIds.length; i++) {
