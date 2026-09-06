@@ -59,6 +59,17 @@ export function SessionCard() {
         </span>
       </div>
 
+      <div className="border-border bg-bg-elevated/70 grid gap-2 rounded-lg border p-3 sm:grid-cols-3">
+        {["Owner signs", "Clone enforces", "Validator redeems"].map((label) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className="bg-signal size-1.5 rounded-full" aria-hidden="true" />
+            <span className="text-micro text-text-secondary font-mono tracking-wider uppercase">
+              {label}
+            </span>
+          </div>
+        ))}
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <div className="text-caption font-mono-numbers flex items-baseline justify-between font-mono">
           <CountUp value={remaining} suffix=" tUSDC" className="text-text-primary" />

@@ -7,7 +7,7 @@ export const metadata: Metadata = createMetadata({
   title: "FAQ",
   path: "/faq",
   description:
-    "Event contracts, capped risk, self-custody, voided markets, autopilot rules, and why Pulse is testnet only.",
+    "Event contracts, capped risk, self-custody, voided markets, session rules, and why Pulse is testnet only.",
 });
 
 export default function FaqPage() {

@@ -6,7 +6,7 @@ import {
   MdCheckCircle,
   MdLock,
   MdNotificationsActive,
-  MdRepeat,
+  MdArrowOutward,
 } from "react-icons/md";
 import { motion } from "motion/react";
 import { Reveal, Section, SectionHeading } from "@/components/ui";
@@ -48,10 +48,10 @@ const STEPS: readonly Step[] = [
     icon: MdCheckCircle,
   },
   {
-    key: "roll",
-    label: "Roll",
-    detail: "If autopilot is armed and within policy, the next window's call is placed.",
-    icon: MdRepeat,
+    key: "ready",
+    label: "Ready",
+    detail: "The funded session stays available for the next call under the same cap.",
+    icon: MdArrowOutward,
   },
 ];
 

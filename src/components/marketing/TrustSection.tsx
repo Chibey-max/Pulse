@@ -17,7 +17,7 @@ const GUARANTEES = [
   {
     icon: MdLink,
     title: "Every action is a hash",
-    body: "Placed, filled, settled, redeemed, rolled, withdrawn. Each links to the explorer.",
+    body: "Placed, filled, settled, redeemed, withdrawn. Each links to the explorer.",
   },
   {
     icon: MdBlock,

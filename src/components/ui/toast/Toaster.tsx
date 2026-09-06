@@ -25,6 +25,24 @@ const VARIANT_STYLE: Record<ToastVariant, { accent: string; icon: typeof MdInfoO
   info: { accent: "text-signal", icon: MdInfoOutline },
 };
 
+function toastHelp(toast: Toast): { body?: string; action?: Toast["action"] } {
+  if (toast.variant !== "error") return {};
+  const text = `${toast.title} ${toast.description ?? ""}`;
+  if (/cancelled|rejected/i.test(text)) {
+    return { body: "No funds moved. Close the wallet request and try again when ready." };
+  }
+  if (/gas|network fee|not enough balance/i.test(text)) {
+    return {
+      body: "This wallet needs STT for Somnia gas. tUSDC is only the trading collateral.",
+      action: { label: "Open faucet", href: "/faucet" },
+    };
+  }
+  if (/fund session/i.test(text)) {
+    return { body: "Add enough tUSDC to the session vault, then place the call again." };
+  }
+  return {};
+}
+
 // === Motion
 
 const toastMotion: Variants = {
@@ -53,6 +71,8 @@ function isExternal(href: string): boolean {
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
   const prefersReduced = usePrefersReducedMotion();
   const { accent, icon: Icon } = VARIANT_STYLE[toast.variant];
+  const help = toastHelp(toast);
+  const action = help.action ?? toast.action;
 
   return (
     <motion.li
@@ -65,23 +85,28 @@ function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       role="status"
     >
       <Icon size={16} aria-hidden="true" className={cn("mt-0.5 shrink-0", accent)} />
-      <div className="flex flex-1 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="text-caption text-text-primary font-medium">{toast.title}</span>
         {toast.description ? (
-          <span className="text-micro text-text-secondary font-mono">{toast.description}</span>
+          <span className="text-micro text-text-secondary font-mono break-words">
+            {toast.description}
+          </span>
         ) : null}
-        {toast.action ? (
+        {help.body ? (
+          <span className="text-micro text-text-muted font-mono">{help.body}</span>
+        ) : null}
+        {action ? (
           <a
-            href={toast.action.href}
-            target={isExternal(toast.action.href) ? "_blank" : undefined}
-            rel={isExternal(toast.action.href) ? "noreferrer" : undefined}
+            href={action.href}
+            target={isExternal(action.href) ? "_blank" : undefined}
+            rel={isExternal(action.href) ? "noreferrer" : undefined}
             className={cn(
               "text-micro inline-flex items-center gap-1 font-mono tracking-wider uppercase",
               accent,
             )}
           >
-            {toast.action.label}
-            {isExternal(toast.action.href) ? <MdNorthEast size={11} aria-hidden="true" /> : null}
+            {action.label}
+            {isExternal(action.href) ? <MdNorthEast size={11} aria-hidden="true" /> : null}
           </a>
         ) : null}
       </div>

@@ -28,7 +28,7 @@ v1 was a consumer front-end for Event Contracts. It was well researched but stru
 v2 keeps everything that was right in v1 (the domain rules, the claim insight, the one-screen decision) and changes the spine:
 
 - The claim worker becomes an onchain reactive settlement handler. Winnings are pushed by validators, not scavenged by a browser tab.
-- That same handler carries an optional autopilot roll into the next window under user-set hard limits, which turns Pulse from a UI into a session primitive.
+- That same handler redeems session-held positions under user-set hard limits, which turns Pulse from a UI into a settlement primitive. Contract-level successor placement was cut from this build.
 - Liquidity becomes Workstream C, owned, seeded and disclosed, not a mitigation sentence.
 
 The product thesis in one line: **Event Contracts roll every 15 minutes but the user experience does not roll with them. Pulse makes a sequence of windows behave like one continuous session.**
@@ -120,8 +120,7 @@ Binary market resolves
 PulseSession.onEvent()
         ├── redeem winning / void ERC-6909 ids held by this session
         ├── credit collateral to the session balance
-        └── if autopilot armed and policy allows:
-                place next-window order on the successor market
+        └── leave the session funded for the owner's next capped call
 ```
 
 ### 5.2 Why a session vault, not delegation
@@ -138,7 +137,7 @@ This is the same shape as prior policy-wallet work (GuardRail, AgentWallet), so 
 | ------------------- | --------------------------------------------- | --------------------- |
 | `budget`            | Collateral deposited. Absolute maximum loss.  | Vault holds only this |
 | `maxStakePerWindow` | Cap on a single call                          | Revert above          |
-| `maxWindows`        | How many windows autopilot may play           | Counter, then disarm  |
+| `maxWindows`        | How many session calls may be placed          | Counter, then disarm  |
 | `allowedMarkets`    | Pair + duration whitelist                     | Revert on others      |
 | `expiry`            | Wall-clock deadline after which no new orders | Revert after          |
 | `side`              | Fixed side, or follow-book rule (see 6.4)     | Deterministic         |
@@ -233,7 +232,7 @@ There is no sentiment model, no LLM, no signal. Anything smarter is post-submiss
 2. Market resolves. The user does nothing.
 3. Validators invoke `onEvent`. Winning ids are redeemed. Session balance updates.
 4. UI shows both hashes: the settlement tx, and the handler redemption tx when observed.
-5. If autopilot is armed, the next window's order appears in the tape with its own hash.
+5. After handler redemption, the session remains funded and ready for the owner's next capped call.
 
 ### 7.4 Close out
 
@@ -293,7 +292,7 @@ Top bar: Pulse mark, network pill, wallet, claim badge (count of redeemable mark
 
 ### 9.2 Activity
 
-Reverse-chronological: placed, filled, cancelled, locked, resolved, auto-claimed, auto-rolled, withdrawn. Auto rows carry a distinct marker once a handler hash exists. Every row links to `marketId` and to the explorer.
+Reverse-chronological: placed, filled, cancelled, locked, resolved, auto-claimed, withdrawn. Auto-claim rows carry a distinct marker once a handler hash exists. Every row links to `marketId` and to the explorer.
 
 ### 9.3 Claim sheet (direct mode)
 
@@ -478,14 +477,14 @@ Three parallel tracks. Dave owns contracts, since the policy-vault shape is alre
 | 2   | Book, size presets, IOC place, cancel                             | `PulseSession` skeleton, policy, deposit, withdraw, tests       | Maker running on ETH 15m both sides                    |
 | 3   | Positions, claim scan, redeem, session math                       | `place` with policy checks and status gate                      | Record a spare successful-fill clip                    |
 | 4   | Session card, open-session flow, session-held positions           | `onEvent` handler, subscription, `redeemAll`, deploy and verify | Demo script v1 written                                 |
-| 5   | Activity tape with auto rows, mobile layout, error decodes        | Autopilot roll (P1), invariant tests green                      | Rehearse the full journey end to end                   |
+| 5   | Activity tape with auto rows, mobile layout, error decodes        | Reactive auto-claim proof, invariant tests green                | Rehearse the full journey end to end                   |
 | 6   | Polish, empty and error states, `/session/[address]`              | Freeze. Verify on explorer. Write `FEEDBACK.md` entries         | Record video. README, env sample                       |
 | 7   | Buffer only                                                       | Buffer only                                                     | Submit by 12:00, seven hours before the 19:00 deadline |
 
 Cut order if a day slips, strictly top down:
 
 1. Cut P2 entirely.
-2. Cut autopilot roll, keep reactive auto-claim.
+2. Keep reactive auto-claim, cut any contract-level successor placement.
 3. Cut session mode, ship direct mode, describe the reactive path honestly as designed and not deployed.
 4. Never cut: claim-all, status gating, the demo video.
 
@@ -508,7 +507,7 @@ Record both answers in the decision log the same day.
 3. **0:35–1:05** Connect, size 25, tap Up, tx hash, position on the card.
 4. **1:05–1:35** Start a session: 200 budget, 25 per window, 4 windows. One confirm. Policy shown in plain words.
 5. **1:35–2:10** The beat that wins it. Cut to a window resolving. Hands off the keyboard. Show both hashes on the explorer when available: the settlement, and the redeem that Somnia validators triggered.
-6. **2:10–2:30** Autopilot places the next window's call. Activity tape shows the run. Withdraw returns everything.
+6. **2:10-2:30** Handler redemption is visible, the session remains funded, and Withdraw returns everything.
 7. **2:30–2:40** What is next: mainnet, MCP surface so agents can drive a session, richer rules.
 
 Record against testnet. Keep the spare fill clip from Day 3. Prepare a resolved market ahead of recording so beat 5 does not depend on waiting.
@@ -538,7 +537,7 @@ Non-negotiable, because it is the fastest way to lose a rubric that rewards veri
 - Anything designed but not deployed goes in a Roadmap section, in the future tense, and appears nowhere else.
 - No hardcoded values standing in for live data anywhere in the submitted build.
 - Every claim in the judging map above must map to a verifiable tx hash or a passing test.
-- If autopilot is cut, delete every reference to it outside Roadmap, including the video.
+- Contract-level successor placement belongs in Roadmap unless deployed and proven with hashes.
 
 ---
 

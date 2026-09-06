@@ -37,9 +37,9 @@ export const FAQS: readonly FaqItem[] = [
       "A voided market redeems both sides at 0.5. It is redeemable, not a loss, and Pulse treats it that way in every P&L figure.",
   },
   {
-    question: "What does autopilot decide?",
+    question: "What does the session rule decide?",
     answer:
-      "Nothing on its own. Autopilot is a deterministic rule you set at the start: same side every window, a fixed stake that never increases, or stop after one losing window. There is no model, no sentiment signal, and no discretion. The card states the rule in plain words.",
+      "Nothing discretionary. A session rule is a deterministic limit you set at the start: same-side intent, fixed stake that never increases, or stop after one losing window. There is no model, no sentiment signal, and no operator discretion. The card states the rule in plain words.",
   },
   {
     question: "Do I need to keep a tab open?",

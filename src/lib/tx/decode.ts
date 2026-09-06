@@ -48,7 +48,9 @@ function isUserRejection(err: unknown): boolean {
 }
 
 function mentionsInsufficientFunds(message: string): boolean {
-  return /insufficient funds|insufficient balance|exceeds balance/i.test(message);
+  return /insufficient funds|insufficient balance|exceeds balance|network fee.*unavailable|fee.*unavailable/i.test(
+    message,
+  );
 }
 
 function humanizeContractErrorName(errorName: string): string | null {
@@ -126,7 +128,7 @@ export function decodeTxError(err: unknown): string {
 
   if (err instanceof BaseError) {
     if (mentionsInsufficientFunds(err.message)) {
-      return "Not enough balance to cover this transaction and gas.";
+      return "This wallet needs STT for Somnia gas. Your tUSDC balance does not pay network fees.";
     }
     for (const [, name] of err.message.matchAll(/\(([^()]+)\)/g)) {
       const message = humanizeContractErrorName(name);
@@ -139,7 +141,7 @@ export function decodeTxError(err: unknown): string {
 
   if (err instanceof Error) {
     if (mentionsInsufficientFunds(err.message)) {
-      return "Not enough balance to cover this transaction and gas.";
+      return "This wallet needs STT for Somnia gas. Your tUSDC balance does not pay network fees.";
     }
     const message = err.message?.trim();
     if (message && !/^execution reverted\.?$/i.test(message)) {

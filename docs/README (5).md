@@ -30,10 +30,12 @@ Binary market resolves
 PulseSession.onEvent()
         ├── redeem winning / void ERC-6909 ids
         ├── credit the session balance
-        └── optionally place the next window's call, within policy
+        └── leave the session funded for the next capped call
 ```
 
-No polling. No cron. No backend service. No browser tab open. The user signs once at the start of the session and does not sign again.
+No polling. No cron. No backend service. No browser tab open for settlement
+redemption. The owner still signs explicit session actions such as placing the
+next call, funding, disarming, or withdrawing.
 
 Because the session holds the outcome tokens itself, there is no operator delegation and no custody handoff. You fund it, you withdraw from it, and no path in the contract moves value to anyone but you.
 
@@ -55,7 +57,8 @@ Because the session holds the outcome tokens itself, there is no operator delega
 **Settle**
 
 - Winnings and voids redeemed automatically on resolution
-- Autopilot can roll into the next window under the same limits
+- After redemption, the session stays funded and ready for the owner to place
+  the next window under the same limits
 - Every automatic action links to its tx hash once observed
 
 Direct mode is also available for users who want to keep positions in their own wallet, with a manual claim-all across every redeemable market.
@@ -86,7 +89,9 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The live ETH 15m card renders read-only before you connect a wallet, so a reviewer can see real market data with no setup at all.
 
-To trade, connect a wallet on Somnia Shannon testnet and mint tUSDC via `faucet(uint256 amount)` on the collateral contract (cap 10,000 per call). There is no separate faucet page. Pulse surfaces this in the UI when your balance is zero.
+To trade, connect a wallet on Somnia Shannon testnet and mint tUSDC from the
+`/faucet` route. The faucet mints fake testnet collateral; STT is still needed
+for gas.
 
 ### Environment
 
@@ -119,9 +124,9 @@ npm run deploy:test  # deploy + verify PulseSessionFactory on 50312
 
 ## Deployments
 
-| Contract            | Address                                    | Network                 |
-| ------------------- | ------------------------------------------ | ----------------------- |
-| PulseSessionFactory | _(add before submission, source-verified)_ | Shannon testnet `50312` |
+| Contract            | Address                                      | Network                 |
+| ------------------- | -------------------------------------------- | ----------------------- |
+| PulseSessionFactory | `0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84` | Shannon testnet `50312` |
 
 |                       | Somnia testnet (submit on this)                           | Somnia mainnet                                             |
 | --------------------- | --------------------------------------------------------- | ---------------------------------------------------------- |
@@ -136,11 +141,11 @@ Pin `@somnia-chain/markets-sdk` at **0.28.0 or newer**. Below 0.28.0 prices miss
 
 ## Demo
 
-- Video: `docs/demo.mp4` _(add before submission)_
-- Live testnet: _(add URL)_
-- Example session: `/session/<address>` _(add before submission)_
+- Video: add DoraHacks demo video URL before final submission.
+- Live testnet: https://pulse-session.vercel.app
+- Example session: `/session/0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA`
 
-Four beats: **call → session → settle without you → roll.**
+Four beats: **call -> session -> settle without you -> ready for next call.**
 
 ## Testnet liquidity disclosure
 
@@ -199,7 +204,7 @@ Every claim on this page maps to a deployed contract, a tx hash, or a passing te
 
 - Mainnet deployment with USDso
 - An MCP surface so agents can open and drive a Pulse session directly, using the `AGENTS.md` and `SKILL.md` conventions DreamDEX already ships
-- Richer autopilot rules beyond the deterministic set shipped here
+- Richer session rules beyond the deterministic set shipped here
 - Mint-vs-take router (buy Up, or mint a complete set and sell Down)
 - Session keys so a phone can call without signing every tick
 - Next-window push reminders

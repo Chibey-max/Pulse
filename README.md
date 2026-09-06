@@ -1,86 +1,132 @@
 # Pulse
 
-Prediction-market session app on Somnia. Next.js frontend plus Foundry contracts and a Somnia
-markets adapter.
+**Noncustodial sessions for DreamDEX Event Contracts on Somnia.**
 
-## Requirements
+Pulse turns BTC/ETH Up/Down windows into a capped-risk session flow: connect on
+Somnia Shannon, place calls through DreamDEX Event Contracts, keep session funds
+inside a per-user clone, and let Somnia Reactivity redeem session-held winning
+positions when the market finalizes.
 
-- Node `>=20.9` (repo pins `24` via `.nvmrc`)
-- pnpm `>=9` (`corepack enable` will provide it)
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) for the contract workflow
+- Live app: https://pulse-session.vercel.app
+- Hackathon: Somnia x DreamDEX Event Contracts
+- Network: Somnia Shannon testnet, chain id `50312`
+- SDK: `@somnia-chain/markets-sdk@0.29.0`
+- Reactivity package: `@somnia-chain/reactivity@0.2.1`
 
-## Setup
+## What Pulse Solves
+
+DreamDEX Event Contracts already give users capped-risk BTC/ETH, 15m/1h,
+Up/Down markets. The remaining pain is settlement: after a winning or voided
+window, the value sits in outcome tokens until the user comes back and redeems.
+
+Pulse adds a session layer:
+
+- **Direct mode:** wallet-held calls plus claim-all for redeemable markets.
+- **Session mode:** a per-user `PulseSession` clone holds collateral and
+  session positions under onchain policy limits.
+- **Reactive settlement:** the session subscribes to `MarketFinalized`; when
+  validators invoke `onEvent(address,bytes32[],bytes)` through precompile
+  `0x0100`, the session redeems its tracked markets.
+
+There is no new market and no offchain keeper in the settlement path. Pulse sits
+on top of DreamDEX Event Contracts.
+
+## Onchain Evidence
+
+The strongest proof is reproducible:
+
+```bash
+pnpm verify:evidence
+```
+
+That script performs read-only checks against the public Shannon RPC. It verifies
+the callback selector, emitted topics, credited amount, implementation bytecode,
+and precompile guard for a validator-invoked settlement.
+
+| Item                           | Value                                                                |
+| ------------------------------ | -------------------------------------------------------------------- |
+| Factory with corrected handler | `0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84`                         |
+| Session clone                  | `0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA`                         |
+| Reactivity subscription tx     | `0xae98302bd2b7dab0fc2f2f92b3f046fae43a80fced6e30773cf81d9eb094baef` |
+| Session call tx                | `0xc625de217a699d3538b5bce77d1eb3e5881379a13e6cac5c56eb833712dcccbb` |
+| Validator redemption tx        | `0xe9bf34787416a0c46814b717868921a43d07491217b46ad03bd48124b14ef7b2` |
+| Handler selector               | `0x53edf33d`                                                         |
+| Reactivity precompile          | `0x0000000000000000000000000000000000000100`                         |
+
+Details live in [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
+## Product Surface
+
+- `/` - judge-facing overview with proof-aware copy.
+- `/app` - live trading desk for BTC/ETH Event Contract windows.
+- `/markets` - all supported live 15m/1h windows; no silent duration fallback.
+- `/faucet` - testnet funding station for fake tUSDC collateral.
+- `/positions` - wallet-held and session-held positions plus direct claim-all.
+- `/activity` - live order history plus session `Redeemed` rows when observed.
+- `/session/new` - 3-transaction setup: create clone, approve tUSDC, fund vault,
+  followed by settlement subscriptions for allowed markets.
+- `/session/[address]` - read-only public session proof surface.
+
+## Contracts
+
+| Contract              | Role                                                                                                                 |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `PulseSessionFactory` | Deploys one EIP-1167 `PulseSession` clone per owner.                                                                 |
+| `PulseSession`        | Holds session collateral, enforces max stake/windows/expiry, places through the adapter, and redeems via Reactivity. |
+| `SomniaBinaryAdapter` | Bridges session calls into DreamDEX binary Event Contracts and tracks session-held outcome balances.                 |
+
+The submitted app points at the corrected factory above. Earlier local/test
+deployments used a handler with the wrong signature; that factory was replaced
+after the Reactivity callback proof was produced.
+
+## Local Run
 
 ```bash
 nvm use
 corepack enable
 pnpm install
-cp .env.example .env.local   # fill in the blanks
+cp .env.example .env.local
+pnpm dev
 ```
 
-> Next.js resolves env vars in this order — `process.env` first, then
-> `.env.local`, then `.env` — stopping at the first one it finds, **even if that value is an
-> empty string**. If your shell (or an IDE task/terminal profile) already exports
-> `NEXT_PUBLIC_SESSION_FACTORY=` or `NEXT_PUBLIC_MARKET_ADAPTER=` blank, `pnpm dev` will
-> silently pick up the empty value instead of the one in `.env.local`, and the app falls back
-> to its "not configured for this environment" state even though the file looks correct. If a
-> value that's clearly set in `.env.local` isn't taking effect, run
-> `env | grep NEXT_PUBLIC_` to check for a stray blank export, `unset` it, and restart
-> `pnpm dev` from a clean shell.
+Open http://localhost:3000.
 
-## Scripts
+Useful checks:
 
-| Script                              | What it does                                            |
-| ----------------------------------- | ------------------------------------------------------- |
-| `pnpm dev`                          | Start the Next.js dev server on `http://localhost:3000` |
-| `pnpm build`                        | Production build                                        |
-| `pnpm start`                        | Serve the production build                              |
-| `pnpm lint` / `pnpm lint:fix`       | ESLint over the repo                                    |
-| `pnpm typegen`                      | Generate Next.js route/layout types                     |
-| `pnpm typecheck`                    | `next typegen` then `tsc --noEmit`                      |
-| `pnpm format` / `pnpm format:check` | Prettier over the repo                                  |
-| `pnpm test`                         | Contract tests then client tests                        |
-| `pnpm test:client`                  | Vitest                                                  |
-| `pnpm test:contracts`               | `forge test`                                            |
-| `pnpm deploy:test`                  | Deploy the session factory to the configured RPC        |
-
-## Tooling
-
-- **ESLint 9** flat config (`eslint.config.mjs`), Next core-web-vitals + TypeScript rules, with
-  `eslint-config-prettier` last.
-- **Prettier** (`.prettierrc`) with the Tailwind plugin. Solidity is left to `forge fmt`
-  (`[fmt]` in `foundry.toml`).
-- **Husky + lint-staged**: `pre-commit` validates the branch name and runs lint-staged;
-  `pre-push` re-validates the branch, type-checks, lints, and runs `forge fmt --check` +
-  `forge test` when `forge` is on `PATH`.
-- Branch names must be `main`, `develop`, or `<type>/<topic>` (`feat|feature|fix|chore|docs|refactor|perf|style|test|hotfix`).
-- `.editorconfig`, `.nvmrc`, and `.vscode/` (settings, recommended extensions, debug configs)
-  round out the editor setup.
-
-## Frontend
-
-Next.js App Router under `src/`:
-
-```
-src/app/(marketing)/   landing page, /faq, /terms, /privacy   (no wallet stack)
-src/app/(app)/         /app, /markets, /market/[id], /positions, /activity,
-                       /session/new, /session/[address]        (wallet + query providers)
-src/components/ui/     Section, CtaButton, CtaLink, Faq, Card, Countdown, StatusChip, Reveal
-src/components/shared/ Navbar, NavigationBar, Footer, AmbientBackground, ThemeToggle, WalletButton
-src/components/marketing/  landing sections (Hero, PulseTimeline, ...)
-src/components/app/    HeroCard, ActionRow, MiniBook, SessionCard, ActivityTape, ...
-src/lib/               design tokens live in app/globals.css; cn, seo, nav, faqs, motion/
-src/lib/app-data/      TanStack Query hooks over the live Somnia testnet data source
+```bash
+pnpm verify:evidence
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
 
-- Design tokens (colour, spacing, type scale) are defined once in `src/app/globals.css`
-  under `@theme`, with light and dark values. Call sites use tokens, not raw values.
-- The app is live-only on Somnia Shannon. It reads live markets/books/portfolio
-  data from the SDK + indexer and session state from the deployed Pulse contracts.
-- Wallet connect is a small custom control over `wagmi` (no RainbowKit), in
-  `src/components/shared/WalletButton.tsx`.
+## Environment
 
-## Contracts
+`.env.example` contains working Shannon defaults:
 
-Foundry project rooted at the repo (`src = "contracts"`, `test`, `scripts`). `forge-std` is
-vendored in `lib/`.
+- `NEXT_PUBLIC_CHAIN_ID=50312`
+- `NEXT_PUBLIC_RPC_URL=https://api.infra.testnet.somnia.network`
+- `NEXT_PUBLIC_INDEXER_URL=https://dev.smk.somnia.host/v1/graphql`
+- `NEXT_PUBLIC_WS_RPC_URL=wss://api.infra.testnet.somnia.network/ws`
+- `NEXT_PUBLIC_SESSION_FACTORY=0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84`
+- `NEXT_PUBLIC_MARKET_ADAPTER=0x6551503d37f739494534f51D5Bbcb3f90077D4f2`
+- `NEXT_PUBLIC_BINARY_MODULE_ADDRESS=0x3ecC694Cef705358864a646142ac17A90E29e388`
+
+If local session config looks missing even though `.env.local` is set, check for
+blank shell exports such as `NEXT_PUBLIC_SESSION_FACTORY=`. Next reads
+`process.env` before `.env.local`, including empty strings.
+
+## Test Status
+
+- Foundry: 15 passing contract tests.
+- Vitest: 6 passing client/domain tests.
+- Evidence verifier: 11 passing read-only RPC checks.
+- Production build: Next.js 16 app builds successfully.
+
+## Honest Scope
+
+Pulse proves session-held automatic redemption through Somnia Reactivity. It does
+not claim autonomous trading alpha, price prediction, or contract-level
+auto-placement of successor windows. After redemption, the session remains funded
+and ready for the owner to place the next capped-risk call.

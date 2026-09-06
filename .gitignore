@@ -434,3 +434,4 @@ tsconfig.tsbuildinfo
 
 # Foundry dry-run simulation logs (real deployments are kept)
 broadcast/*/*/dry-run/
+.env*

@@ -20,7 +20,6 @@ const KIND_LABEL: Record<TapeKind, string> = {
   locked: "Locked",
   resolved: "Resolved",
   "auto-claimed": "Auto-claimed",
-  "auto-rolled": "Auto-rolled",
   withdrawn: "Withdrawn",
 };
 

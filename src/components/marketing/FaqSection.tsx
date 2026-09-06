@@ -19,7 +19,7 @@ export function FaqSection() {
           id="faq"
           eyebrow="Questions"
           title="The parts people ask about first"
-          description="Capped risk, self-custody, voided markets, and what autopilot is allowed to decide."
+          description="Capped risk, self-custody, voided markets, and what session rules are allowed to decide."
         />
         <Faq items={FAQS.slice(0, PREVIEW_COUNT)} />
         <CtaLink variant="secondary" href="/faq" className="self-start">

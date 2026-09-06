@@ -15,7 +15,7 @@ import {
   pulseSessionFactoryAbi,
 } from "@/lib/session";
 import type { CallSide, MarketCard, Position, SessionState, Tape, WindowStatus } from "@/lib/types";
-import { formatAmount } from "@/lib/format";
+import { formatAmount, formatMarketId } from "@/lib/format";
 import { MARKET_ADAPTER_ADDRESS, SESSION_FACTORY_ADDRESS } from "./config";
 import type { OrderBook, PulseDataSource, Redeemable, TapeEntry, TapeKind } from "./types";
 
@@ -734,14 +734,17 @@ async function readActivity(owner?: string): Promise<TapeEntry[]> {
   if (!owner) return [];
   const session = await readSessionAddress(owner);
   const accounts = [owner, session].filter(Boolean) as Address[];
-  const orderGroups = await Promise.all(
-    accounts.map(async (account) => ({
-      account,
-      orders: await getExchange().client.getOrders(account, { limit: 20 }),
-    })),
-  );
+  const [orderGroups, redemptions] = await Promise.all([
+    Promise.all(
+      accounts.map(async (account) => ({
+        account,
+        orders: await getExchange().client.getOrders(account, { limit: 20 }),
+      })),
+    ),
+    session ? readSessionRedemptions(session) : Promise.resolve([]),
+  ]);
 
-  return orderGroups
+  const orderRows = orderGroups
     .flatMap((group) => group.orders.map((order) => ({ account: group.account, order })))
     .filter(({ order }) => order.market.startsWith("0x"))
     .map(({ account, order }) => ({
@@ -754,9 +757,79 @@ async function readActivity(owner?: string): Promise<TapeEntry[]> {
       txHash: order.placedTxHash as `0x${string}`,
       ts: Number(order.placedAtTimestamp),
       noSignature: false,
-    }))
-    .sort((a, b) => b.ts - a.ts)
-    .slice(0, 25);
+    }));
+
+  return [...orderRows, ...redemptions].sort((a, b) => b.ts - a.ts).slice(0, 25);
+}
+
+async function readSessionRedemptions(session: Address): Promise<TapeEntry[]> {
+  try {
+    const client = getPublicClient();
+    const collateral = getCollateral(getPulseChain().id);
+    const [fromBlock, toBlock] = await Promise.all([
+      getContractCreationBlock(session),
+      client.getBlockNumber(),
+    ]);
+    const [decimals, windows, placedLogs, redeemedLogs] = await Promise.all([
+      client.readContract({ address: collateral.address, abi: erc20Abi, functionName: "decimals" }),
+      ensureWindows().catch(() => [] as LiveWindow[]),
+      getLogsChunked(fromBlock, toBlock, (from, to) =>
+        client.getContractEvents({
+          address: session,
+          abi: pulseSessionAbi,
+          eventName: "Placed",
+          fromBlock: from,
+          toBlock: to,
+        }),
+      ),
+      getLogsChunked(fromBlock, toBlock, (from, to) =>
+        client.getContractEvents({
+          address: session,
+          abi: pulseSessionAbi,
+          eventName: "Redeemed",
+          fromBlock: from,
+          toBlock: to,
+        }),
+      ),
+    ]);
+    if (redeemedLogs.length === 0) return [];
+
+    const sideByMarket = new Map<string, CallSide>();
+    for (const log of placedLogs) {
+      sideByMarket.set(
+        (log.args.marketId as string).toLowerCase(),
+        sideFromOutcome(log.args.side as number),
+      );
+    }
+
+    const symbolByMarket = new Map(
+      windows.map((window) => [window.marketId.toLowerCase(), `${window.pair}-${window.window}`]),
+    );
+    const blocks = await Promise.all(
+      [...new Set(redeemedLogs.map((log) => log.blockNumber))].map((blockNumber) =>
+        client.getBlock({ blockNumber: blockNumber as bigint }),
+      ),
+    );
+    const tsByBlock = new Map(blocks.map((block) => [block.number, Number(block.timestamp)]));
+
+    return redeemedLogs.map((log) => {
+      const marketId = log.args.marketId as `0x${string}`;
+      const key = marketId.toLowerCase();
+      return {
+        id: `${session}-${log.transactionHash}-${log.logIndex}`,
+        kind: "auto-claimed" as const,
+        marketId,
+        symbol: symbolByMarket.get(key) ?? formatMarketId(marketId),
+        side: sideByMarket.get(key),
+        amount: rawAmount(log.args.credited as bigint, decimals),
+        txHash: log.transactionHash,
+        ts: tsByBlock.get(log.blockNumber as bigint) ?? 0,
+        noSignature: true,
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 async function readRedeemable(owner?: string): Promise<Redeemable[]> {

@@ -1,5 +1,5 @@
 import { Reveal, Section } from "@/components/ui";
-import { FaucetCard, HeroCard, SessionCard, TapeSummary } from "@/components/app";
+import { FaucetCard, HeroCard, ProofRail, SessionCard, TapeSummary } from "@/components/app";
 
 export default function AppHomePage() {
   return (
@@ -11,6 +11,9 @@ export default function AppHomePage() {
         </Reveal>
         <Reveal child>
           <TapeSummary />
+        </Reveal>
+        <Reveal child>
+          <ProofRail />
         </Reveal>
         <Reveal child className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
           <HeroCard />

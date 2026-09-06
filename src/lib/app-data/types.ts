@@ -20,14 +20,7 @@ export interface OrderBook {
 // === Activity tape
 
 export type TapeKind =
-  | "placed"
-  | "filled"
-  | "cancelled"
-  | "locked"
-  | "resolved"
-  | "auto-claimed"
-  | "auto-rolled"
-  | "withdrawn";
+  "placed" | "filled" | "cancelled" | "locked" | "resolved" | "auto-claimed" | "withdrawn";
 
 export interface TapeEntry {
   id: string;

@@ -350,8 +350,8 @@ export function useCall(market: MarketCard | undefined): UseCall {
           update(toastId, {
             title: "Session call submitted",
             description: autoRedeemArmed
-              ? "Your policy enforced the call from the funded session."
-              : "Call placed, but this window's auto-redeem could not be armed — claim it from Positions when it resolves.",
+              ? "Your policy enforced the call from the funded session. Settlement redemption is armed for this window."
+              : "Call placed, but this window's settlement subscription failed. Claim it from Positions when it resolves.",
             variant: "success",
             action: { label: "View transaction", href: getTxUrl(txHash) },
             duration: 6_000,

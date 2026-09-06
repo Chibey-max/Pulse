@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MdCheckCircle, MdErrorOutline, MdHourglassTop, MdOpenInNew } from "react-icons/md";
 import { getTxUrl } from "@/lib/chain";
 import { cn } from "@/lib/cn";
@@ -32,11 +33,14 @@ const ICONS = {
 
 function cleanDetail(detail?: string): string | undefined {
   if (!detail) return undefined;
+  if (/insufficient funds|network fee|fee.*unavailable|gas/i.test(detail)) {
+    return "MetaMask cannot cover the network fee. Add STT to this wallet, then try again.";
+  }
   const signatureRejection = detail.match(/User denied transaction signature/i);
   if (signatureRejection) return "MetaMask rejected the transaction signature.";
   const userRejected = detail.match(/User rejected the request/i);
   if (userRejected) return "The request was rejected in the wallet.";
-  return detail.length > 280 ? `${detail.slice(0, 280)}...` : detail;
+  return detail.length > 220 ? `${detail.slice(0, 220)}...` : detail;
 }
 
 // === Component
@@ -44,9 +48,11 @@ function cleanDetail(detail?: string): string | undefined {
 export function ActionStatusNotice({ tone, title, detail, hint, hash }: ActionStatusNoticeProps) {
   const Icon = ICONS[tone];
   const cleaned = cleanDetail(detail);
+  const [open, setOpen] = useState<boolean>(false);
+  const canShowRaw = Boolean(detail && cleaned && detail !== cleaned);
 
   return (
-    <div className={cn("rounded-lg border p-3", TONE_CLASS[tone])} role="status">
+    <div className={cn("rounded-lg border p-3 shadow-sm", TONE_CLASS[tone])} role="status">
       <div className="flex items-start gap-3">
         <span className="bg-bg-panel/70 mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md">
           <Icon size={16} aria-hidden="true" />
@@ -67,6 +73,22 @@ export function ActionStatusNotice({ tone, title, detail, hint, hash }: ActionSt
           </div>
           {cleaned ? <p className="text-caption mt-1 break-words">{cleaned}</p> : null}
           {hint ? <p className="text-micro text-text-muted mt-2 font-mono">{hint}</p> : null}
+          {canShowRaw ? (
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setOpen((value) => !value)}
+                className="text-micro text-text-muted hover:text-text-primary font-mono tracking-wider uppercase transition-colors"
+              >
+                {open ? "Hide details" : "Show details"}
+              </button>
+              {open ? (
+                <pre className="border-border bg-bg text-text-secondary mt-2 max-h-36 overflow-auto rounded-md border p-2 text-[0.68rem] leading-relaxed whitespace-pre-wrap">
+                  {detail}
+                </pre>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

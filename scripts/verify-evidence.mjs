@@ -30,15 +30,6 @@ const handlerAbi = [
     outputs: [],
   },
 ];
-const redeemedEvent = {
-  type: "event",
-  name: "Redeemed",
-  inputs: [
-    { name: "marketId", type: "bytes32", indexed: true },
-    { name: "credited", type: "uint256", indexed: false },
-  ],
-};
-
 let failures = 0;
 function check(label, ok, detail) {
   console.log(`${ok ? "  PASS" : "  FAIL"}  ${label}${detail ? ` — ${detail}` : ""}`);

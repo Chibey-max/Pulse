@@ -21,17 +21,17 @@ const STEPS = [
   {
     icon: MdBolt,
     label: "STT",
-    copy: "Pays gas for wallet confirmations.",
+    copy: "Pays Somnia network fees. MetaMask shows this as your chain balance.",
   },
   {
     icon: MdWaterDrop,
     label: "tUSDC",
-    copy: "Fake collateral used for calls and sessions.",
+    copy: "Test collateral for Up/Down calls and session vaults. It has no real value.",
   },
   {
     icon: MdShield,
     label: "Risk cap",
-    copy: "Only test collateral moves here.",
+    copy: "Pulse spends only the tUSDC amount you choose for a call or session action.",
   },
 ] as const;
 
@@ -82,8 +82,8 @@ export function FaucetCard({ always = false }: FaucetCardProps) {
                 Testnet funding
               </h2>
               <p className="text-caption text-text-secondary max-w-xl">
-                The faucet mints fake tUSDC collateral on Somnia Shannon. Use it when your tUSDC
-                balance is zero so you can place calls or fund a Pulse session.
+                Pulse uses two testnet assets: STT for gas and tUSDC for collateral. This page is
+                for tUSDC only; use a Somnia faucet for STT when MetaMask says fees are unavailable.
               </p>
             </div>
           </div>
@@ -122,13 +122,13 @@ export function FaucetCard({ always = false }: FaucetCardProps) {
           <ActionStatusNotice
             tone="info"
             title="Connect a wallet to read funding state"
-            detail="Pulse will show the mint control only if this wallet has zero tUSDC on Somnia Shannon."
+            detail="Pulse checks your tUSDC balance on Somnia Shannon and shows whether this wallet can mint test collateral."
           />
         ) : funded ? (
           <ActionStatusNotice
             tone="success"
             title="Wallet already funded"
-            detail="You do not need the faucet right now. Your tUSDC balance is enough to open a session or place a direct call."
+            detail="This faucet mints only when the wallet has zero tUSDC. You already have test collateral; keep STT available for gas."
           />
         ) : canMint ? (
           <ActionStatusNotice
@@ -179,7 +179,7 @@ export function FaucetCard({ always = false }: FaucetCardProps) {
             tone="error"
             title="Faucet transaction stopped"
             detail={error ?? "Faucet call failed. Try again."}
-            hint="Nothing was minted unless a transaction hash appears."
+            hint="If MetaMask cannot price gas, add STT from a Somnia testnet faucet first."
           />
         ) : null}
       </div>

@@ -17,7 +17,7 @@ export default function FaucetPage() {
           id="faucet"
           as="h1"
           title="Faucet"
-          description="A testnet funding station for Pulse. STT pays gas; tUSDC is fake collateral for calls and sessions."
+          description="A testnet funding station for Pulse. STT pays network fees in MetaMask; tUSDC is fake collateral for calls and sessions."
         />
         <FaucetCard always />
       </div>

@@ -108,7 +108,7 @@ after wallet connection:
 5. `/positions` — wallet-held and session-held positions across Open, Locked,
    Unclaimed, and Claimed states.
 6. `/activity` — reverse-chronological tape of placed, filled, cancelled, locked,
-   resolved, auto-claimed, auto-rolled, and withdrawn events.
+   resolved, auto-claimed, and withdrawn events.
 7. `/session/new` — session setup flow for budget, maximum stake, window count,
    allowed pair/duration, expiry, and deterministic rule.
 8. `/session/[address]` — public, read-only proof page showing policy, session
@@ -150,7 +150,7 @@ sections. Include:
    reactive redemption transaction and its handler hash.
 9. An accessible FAQ using real objections from the PRD: What is an event
    contract? What can I lose? Who holds my funds? Can I withdraw anytime? What
-   happens when a market is voided? What does autopilot decide? Why testnet?
+   happens when a market is voided? What does a session rule decide? Why testnet?
 10. A final CTA that returns to the live-window decision, plus a compact footer
     with Somnia, DreamDEX, testnet, GitHub, docs, terms, privacy, and risk copy.
 
