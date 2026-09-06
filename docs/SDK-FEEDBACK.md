@@ -183,7 +183,35 @@ indistinguishable from a broken handler, since neither produces any trace.
 Worth disambiguating the names, or documenting which one the binary module
 actually emits.
 
-## 8. Smaller notes
+## 9. The handler interface is easy to get wrong, and failure is silent
+
+**Severity: high — this cost us the differentiator until we found it.**
+
+`ISomniaEventHandler` is `onEvent(address,bytes32[],bytes)` (selector
+`0x53edf33d`), exported as `SomniaEventHandlerABI`. We had written
+`onEvent(bytes)` (selector `0x0bde80f3`) against a hand-rolled interface.
+
+That handler compiles, deploys, and _accepts a subscription without complaint_.
+It then never fires. There is no revert surfaced to the subscriber, no failed
+callback event, no on-chain trace at all — the only symptom is silence, which is
+indistinguishable from "the filter didn't match" or "validators aren't running".
+We burned hours ruling out topic layout and timing before checking the selector.
+
+What would have helped: have `subscribeRaw` reject a `handlerFunctionSelector`
+that isn't `0x53edf33d`, or emit a failed-callback event the owner can observe.
+Either would have turned hours into seconds.
+
+## 10. `eth_getLogs` silently ignores the `topics` filter
+
+**Severity: medium — produces confidently wrong results.**
+
+On the public RPC, `getLogs({ address, topics: [t0] })` returns logs whose
+`topics[0]` is not `t0`. We saw 2,580 logs come back for a single-topic filter,
+across many unrelated `topic0` values. Filters are not applied and no error is
+raised, so any code trusting the filter reads plausible, wrong data. We had to
+fetch unfiltered ranges and filter client-side.
+
+## 11. Smaller notes
 
 - **Adapter-derived quantities need lot alignment.** `quantity = stake × ONE_COLLATERAL / price`
   does not land on the pool's `lotSize`, and the pool rejects unaligned

@@ -23,7 +23,8 @@
     "deploy:test": "forge script scripts/DeployPulseSessionFactory.s.sol --rpc-url \"$NEXT_PUBLIC_RPC_URL\" --broadcast --verify",
     "lint-staged": "lint-staged",
     "validate-branch-name": "validate-branch-name",
-    "prepare": "husky"
+    "prepare": "husky",
+    "verify:evidence": "node scripts/verify-evidence.mjs"
   },
   "validate-branch-name": {
     "pattern": "^(main|develop)$|^(feat|feature|fix|chore|docs|refactor|perf|style|test|hotfix)/.+$",
