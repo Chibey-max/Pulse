@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/app/StateNotice";
 import { useCall } from "@/components/app/hooks";
 import { useMarkets, usePositions, useSession } from "@/lib/app-data";
 import { formatMarketId } from "@/lib/format";
+import { useCountdown } from "@/hooks/useCountdown";
 
 // === Types
 
@@ -38,6 +39,7 @@ export function HeroCard({ marketId }: HeroCardProps) {
   const { data: markets, isLoading } = useMarkets();
   const { data: positions } = usePositions();
   const { data: session, isLoading: isSessionLoading } = useSession();
+  const sessionExpiry = useCountdown(session?.expiry ?? Number.MAX_SAFE_INTEGER);
 
   const market = useMemo(
     () => (markets ? pickMarket(markets, marketId) : undefined),
@@ -65,16 +67,19 @@ export function HeroCard({ marketId }: HeroCardProps) {
   const tradeable = market.status === "trading";
   const sessionBalance = session ? Number(session.remaining.replace(/,/g, "")) : undefined;
   const sessionKnown = !isConnected || !isSessionLoading;
+  const sessionExpired = Boolean(session && sessionExpiry.expired);
   const sessionCanTrade = sessionBalance === undefined || sessionBalance > 0;
   const disabledReason = !isConnected
     ? "Connect a wallet on Somnia Shannon testnet to call this window."
     : !sessionKnown
       ? "Reading session state before enabling calls."
-      : !tradeable
-        ? `Window is ${market.status}. Calls are closed.`
-        : !sessionCanTrade
-          ? "Fund the session vault before placing session calls."
-          : undefined;
+      : sessionExpired
+        ? "This session expired. Start a fresh session before placing session calls."
+        : !tradeable
+          ? `Window is ${market.status}. Calls are closed.`
+          : !sessionCanTrade
+            ? "Fund the session vault before placing session calls."
+            : undefined;
 
   return (
     <TiltCard max={3}>
@@ -126,7 +131,9 @@ export function HeroCard({ marketId }: HeroCardProps) {
 
         <ActionRow
           market={market}
-          disabled={!tradeable || !isConnected || !sessionKnown || !sessionCanTrade}
+          disabled={
+            !tradeable || !isConnected || !sessionKnown || sessionExpired || !sessionCanTrade
+          }
           disabledReason={disabledReason}
           pending={status === "placing"}
           onCall={call}

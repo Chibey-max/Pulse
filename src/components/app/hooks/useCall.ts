@@ -233,6 +233,16 @@ export function useCall(market: MarketCard | undefined): UseCall {
       if (!market) return;
 
       if (session) {
+        const nowSeconds = Math.floor(Date.now() / 1000);
+        if (session.expiry <= nowSeconds) {
+          show({
+            title: "Session expired",
+            description: "Start a fresh session before placing session calls.",
+            variant: "error",
+          });
+          return;
+        }
+
         const balance = Number(session.remaining.replace(/,/g, ""));
         if (balance < stake) {
           show({

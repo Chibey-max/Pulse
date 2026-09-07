@@ -7,6 +7,7 @@ import { ActionStatusNotice } from "@/components/app/ActionStatusNotice";
 import { Skeleton } from "@/components/app/StateNotice";
 import { useSession } from "@/lib/app-data";
 import { useSessionActions } from "@/lib/app-data/session-writes";
+import { useCountdown } from "@/hooks/useCountdown";
 
 // === Copy
 
@@ -27,6 +28,7 @@ export function SessionCard() {
   const { deposit, disarm, withdraw, status } = useSessionActions();
   const [transferMode, setTransferMode] = useState<"fund" | "withdraw" | null>(null);
   const [amount, setAmount] = useState<string>("");
+  const sessionExpiry = useCountdown(session?.expiry ?? Number.MAX_SAFE_INTEGER);
 
   if (isLoading) {
     return <Skeleton className="h-48 w-full" />;
@@ -49,13 +51,21 @@ export function SessionCard() {
   const remaining = Number(session.remaining.replace(/,/g, ""));
   const budget = Number(session.budget.replace(/,/g, ""));
   const pct = budget > 0 ? Math.max(0, Math.min(100, (remaining / budget) * 100)) : 0;
+  const expired = sessionExpiry.expired;
+  const sessionStatus = expired ? "Expired" : session.armed ? "Armed" : "Disarmed";
 
   return (
     <Card glow className="flex flex-col gap-4 p-5">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-body text-text-primary font-medium">Session</h2>
-        <span className="text-micro text-signal font-mono tracking-wider uppercase">
-          {session.armed ? "Armed" : "Disarmed"}
+        <span
+          className={
+            expired
+              ? "text-micro text-down font-mono tracking-wider uppercase"
+              : "text-micro text-signal font-mono tracking-wider uppercase"
+          }
+        >
+          {sessionStatus}
         </span>
       </div>
 
@@ -144,6 +154,14 @@ export function SessionCard() {
             tone="info"
             title="Fund the session before calling"
             detail="This wallet has a session clone, so calls route through the session contract. The vault needs tUSDC before it can place a call."
+          />
+        ) : null}
+
+        {expired ? (
+          <ActionStatusNotice
+            tone="error"
+            title="Session expired"
+            detail="Calls through this session are closed by its onchain policy. Start a fresh session for the next demo run, or use a wallet without a session for Direct mode."
           />
         ) : null}
 
