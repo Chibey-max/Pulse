@@ -45,6 +45,7 @@ contract PulseSession is ISomniaEventHandler {
     event Redeemed(bytes32 indexed marketId, uint256 credited);
     event RedeemFailed(bytes32 indexed marketId, bytes reason);
     event Disarmed();
+    event Rearmed(uint64 expiry, uint32 maxWindows);
     event Withdrawn(address indexed owner, uint256 amount);
 
     error AlreadyInitialized();
@@ -166,6 +167,26 @@ contract PulseSession is ISomniaEventHandler {
     function disarm() external onlyOwner {
         armed = false;
         emit Disarmed();
+    }
+
+    /*
+     * Bring a spent session back into service. Without this, `armed` was write-once-false
+     * and `policy.expiry` was fixed at initialize, so a session that ran out of time or was
+     * disarmed became permanently unusable — and the factory stores one session per owner,
+     * so that wallet could never open another. Only the two exhaustible limits are
+     * refreshed: `maxStakePerWindow` and `rule` are the caps that make the policy a real
+     * guarantee, so they stay immutable for the life of the clone.
+     */
+    function rearm(uint64 newExpiry, uint32 newMaxWindows) external onlyOwner {
+        if (newExpiry <= block.timestamp) revert InvalidPolicy();
+        if (newMaxWindows == 0) revert InvalidPolicy();
+
+        policy.expiry = newExpiry;
+        policy.maxWindows = newMaxWindows;
+        windowsUsed = 0;
+        armed = true;
+
+        emit Rearmed(newExpiry, newMaxWindows);
     }
 
     function withdraw(uint256 amount) external onlyOwner nonReentrant {

@@ -57,6 +57,8 @@ function humanizeContractErrorName(errorName: string): string | null {
   switch (errorName) {
     case "NotOwner":
       return "Switch MetaMask to the wallet that owns this session.";
+    case "SessionAlreadyExists":
+      return "This wallet already owns a session. Open it from the desk instead of creating another.";
     case "MarketNotAllowed":
       return "This rolled window is not allowed by the session yet. Try again to extend it.";
     case "MarketNotTrading":

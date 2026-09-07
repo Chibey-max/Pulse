@@ -31,9 +31,15 @@ const ICONS = {
   info: MdHourglassTop,
 } as const;
 
+/*
+  Only rewrite a detail into the "add STT" advice when the wallet genuinely could not pay.
+  A bare /gas/ match used to catch every revert surfaced through gas estimation — a
+  SessionAlreadyExists or MarketNotAllowed revert would be reported as an empty wallet,
+  sending the user to the faucet for a problem the faucet cannot fix.
+*/
 function cleanDetail(detail?: string): string | undefined {
   if (!detail) return undefined;
-  if (/insufficient funds|network fee|fee.*unavailable|gas/i.test(detail)) {
+  if (/insufficient funds|exceeds balance|fee.*unavailable|needs STT/i.test(detail)) {
     return "MetaMask cannot cover the network fee. Add STT to this wallet, then try again.";
   }
   const signatureRejection = detail.match(/User denied transaction signature/i);

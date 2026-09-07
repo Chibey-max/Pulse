@@ -1,4 +1,4 @@
-import { BINARY_MODULE_ADDRESS, SESSION_FACTORY_ADDRESS } from "@/lib/app-data/config";
+import { BINARY_MODULE_ADDRESS } from "@/lib/app-data/config";
 import { SOMNIA_REACTIVITY_PRECOMPILE, getExplorerUrl, getTxUrl } from "@/lib/chain";
 
 // === Evidence
@@ -8,7 +8,14 @@ export const PULSE_EVIDENCE = {
   githubUrl: "https://github.com/Chibey-max/Pulse",
   chain: "Somnia Shannon",
   chainId: 50312,
-  factory: SESSION_FACTORY_ADDRESS,
+  /*
+    Pinned, not read from config: this is the factory that deployed the clone which served
+    the validator redemption below. The app may point at a newer factory (a redeploy adds
+    rearm() so a spent session is not a dead end), but the evidence trail must keep naming
+    the immutable addresses the transaction actually touched, or `pnpm verify:evidence`
+    would be checking a contract that never ran.
+  */
+  factory: "0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84",
   /*
     The implementation the current factory clones, and the address embedded in the clone's
     EIP-1167 bytecode. It must be the one carrying selector 0x53edf33d — the previous

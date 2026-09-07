@@ -8,7 +8,7 @@ import { Card, CtaButton } from "@/components/ui";
 import { ActionStatusNotice } from "@/components/app/ActionStatusNotice";
 import { FaucetCard } from "@/components/app/FaucetCard";
 import { useCollateralDecimals } from "@/lib/app-data/collateral";
-import { useMarkets } from "@/lib/app-data";
+import { useMarkets, useSession } from "@/lib/app-data";
 import { useSessionActions } from "@/lib/app-data/session-writes";
 import { formatAmount } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -61,6 +61,12 @@ export function SessionForm() {
   const decimals = useCollateralDecimals();
   const { createSession, status } = useSessionActions();
   const { data: markets } = useMarkets();
+  /*
+    The factory keys one session per owner, so a second createSession reverts with
+    SessionAlreadyExists — after the wallet has already paid gas for the attempt. Read the
+    existing session up front and offer it instead of the setup flow.
+  */
+  const { data: existingSession } = useSession();
 
   /* No factory: render an honest unavailable state, never a placeholder deploy action. */
   const fallback: boolean = status.unavailable;
@@ -235,6 +241,10 @@ export function SessionForm() {
             <CtaButton variant="primary" disabled>
               Session factory unavailable
             </CtaButton>
+          ) : existingSession ? (
+            <CtaButton variant="primary" onClick={() => router.push("/app")}>
+              Open your session
+            </CtaButton>
           ) : (
             <CtaButton variant="primary" onClick={handleDeploy} disabled={deployDisabled}>
               {deployLabel}
@@ -250,6 +260,13 @@ export function SessionForm() {
             tone="info"
             title="Session contracts unavailable"
             detail="Live session contracts are not configured for this environment."
+          />
+        ) : existingSession ? (
+          <ActionStatusNotice
+            tone="info"
+            title="This wallet already has a session"
+            detail={`The factory stores one session per owner, at ${existingSession.address}. Creating a second one reverts.`}
+            hint="Fund, disarm, or withdraw from the session panel on the desk."
           />
         ) : status.phase !== "idle" ? (
           <ActionStatusNotice

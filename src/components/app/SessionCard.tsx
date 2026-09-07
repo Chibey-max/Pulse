@@ -25,7 +25,7 @@ const RULE_COPY: Record<SessionState["rule"], string> = {
 */
 export function SessionCard() {
   const { data: session, isLoading } = useSession();
-  const { deposit, disarm, withdraw, status } = useSessionActions();
+  const { deposit, disarm, withdraw, rearm, status } = useSessionActions();
   const [transferMode, setTransferMode] = useState<"fund" | "withdraw" | null>(null);
   const [amount, setAmount] = useState<string>("");
   const sessionExpiry = useCountdown(session?.expiry ?? Number.MAX_SAFE_INTEGER);
@@ -53,6 +53,8 @@ export function SessionCard() {
   const pct = budget > 0 ? Math.max(0, Math.min(100, (remaining / budget) * 100)) : 0;
   const expired = sessionExpiry.expired;
   const sessionStatus = expired ? "Expired" : session.armed ? "Armed" : "Disarmed";
+  /* Expired or disarmed both block place(); rearm() is the only way back for either. */
+  const needsRearm = expired || !session.armed;
 
   return (
     <Card glow className="flex flex-col gap-4 p-5">
@@ -107,9 +109,15 @@ export function SessionCard() {
 
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-3 gap-2">
-          <CtaButton variant="secondary" size="sm" onClick={disarm}>
-            Disarm
-          </CtaButton>
+          {needsRearm ? (
+            <CtaButton variant="primary" size="sm" onClick={() => rearm(2, 20)}>
+              Re-arm
+            </CtaButton>
+          ) : (
+            <CtaButton variant="secondary" size="sm" onClick={disarm}>
+              Disarm
+            </CtaButton>
+          )}
           <CtaButton
             variant="secondary"
             size="sm"
@@ -177,15 +185,17 @@ export function SessionCard() {
               status.phase === "error" ? "error" : status.phase === "done" ? "success" : "pending"
             }
             title={
-              status.phase === "disarming"
-                ? "Disarming session"
-                : status.phase === "withdrawing"
-                  ? "Withdrawing from session"
-                  : status.phase === "done"
-                    ? "Session action confirmed"
-                    : status.phase === "error"
-                      ? "Session action stopped"
-                      : "Working"
+              status.phase === "rearming"
+                ? "Re-arming session"
+                : status.phase === "disarming"
+                  ? "Disarming session"
+                  : status.phase === "withdrawing"
+                    ? "Withdrawing from session"
+                    : status.phase === "done"
+                      ? "Session action confirmed"
+                      : status.phase === "error"
+                        ? "Session action stopped"
+                        : "Working"
             }
             detail={status.error}
             hint={

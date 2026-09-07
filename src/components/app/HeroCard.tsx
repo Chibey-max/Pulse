@@ -45,6 +45,14 @@ export function HeroCard({ marketId }: HeroCardProps) {
     () => (markets ? pickMarket(markets, marketId) : undefined),
     [markets, marketId],
   );
+  /*
+    market.status is computed when the market list is fetched, and that list only refetches
+    every 30s — so a window keeps its "trading" status (and live Call buttons) for up to
+    half a minute after it expires, while the on-screen countdown already reads 00:00.
+    Every call placed in that gap reverts with MarketNotTrading. Gate on the same ticking
+    clock the countdown uses.
+  */
+  const windowExpiry = useCountdown(market?.expiryTs ?? Number.MAX_SAFE_INTEGER);
   const { call, status } = useCall(market);
 
   if (isLoading || !markets) {
@@ -64,7 +72,7 @@ export function HeroCard({ marketId }: HeroCardProps) {
   const position = positions?.find(
     (p) => p.marketId.toLowerCase() === market.marketId.toLowerCase(),
   );
-  const tradeable = market.status === "trading";
+  const tradeable = market.status === "trading" && !windowExpiry.expired;
   const sessionBalance = session ? Number(session.remaining.replace(/,/g, "")) : undefined;
   const sessionKnown = !isConnected || !isSessionLoading;
   const sessionExpired = Boolean(session && sessionExpiry.expired);
@@ -75,11 +83,13 @@ export function HeroCard({ marketId }: HeroCardProps) {
       ? "Reading session state before enabling calls."
       : sessionExpired
         ? "This session expired. Start a fresh session before placing session calls."
-        : !tradeable
-          ? `Window is ${market.status}. Calls are closed.`
-          : !sessionCanTrade
-            ? "Fund the session vault before placing session calls."
-            : undefined;
+        : windowExpiry.expired
+          ? "This window has resolved. Waiting for the next one to open."
+          : !tradeable
+            ? `Window is ${market.status}. Calls are closed.`
+            : !sessionCanTrade
+              ? "Fund the session vault before placing session calls."
+              : undefined;
 
   return (
     <TiltCard max={3}>

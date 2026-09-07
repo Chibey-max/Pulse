@@ -39,6 +39,7 @@ export type SessionActionPhase =
   | "subscribing"
   | "withdrawing"
   | "disarming"
+  | "rearming"
   | "done"
   | "error";
 
@@ -55,6 +56,8 @@ export interface SessionActions {
   deposit: (amount: number) => void;
   withdraw: (amount: number) => void;
   disarm: () => void;
+  /* Restores an expired or disarmed session: new expiry in hours, fresh window budget. */
+  rearm: (hours: number, windows: number) => void;
   status: SessionActionStatus;
 }
 
@@ -254,11 +257,33 @@ export function useSessionActions(): SessionActions {
     );
   }, [runOnSession, send]);
 
+  /*
+    A session whose expiry passed or that was disarmed is otherwise finished for good: the
+    clone has no other way back to armed, and the factory stores one session per owner, so
+    the wallet could never open a replacement. Extends the two exhaustible limits only —
+    the stake cap and rule stay fixed for the life of the clone.
+  */
+  const rearm = useCallback(
+    (hours: number, windows: number): void => {
+      const newExpiry = BigInt(Math.floor(Date.now() / 1000) + Math.round(hours * 3600));
+      runOnSession("rearming", (session) =>
+        send({
+          address: session,
+          abi: pulseSessionAbi,
+          functionName: "rearm",
+          args: [newExpiry, windows],
+        }),
+      );
+    },
+    [runOnSession, send],
+  );
+
   return {
     createSession,
     deposit,
     withdraw,
     disarm,
+    rearm,
     status: { phase, unavailable, error, hash },
   };
 }

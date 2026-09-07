@@ -298,7 +298,13 @@ async function loadLiveWindowsFromCreators(): Promise<LiveWindow[]> {
     return rows
       .filter((row): row is LiveWindow => row !== null)
       .sort((a, b) => a.expiryTs - b.expiryTs);
-  } catch {
+  } catch (error) {
+    /*
+      Swallowing this silently made an empty board undiagnosable: the creator path would
+      fail, the indexer fallback would return nothing, and the desk rendered "no live
+      window" with a clean console while four windows were live on chain.
+    */
+    console.error("[pulse] live window discovery failed, falling back to the indexer", error);
     return [];
   }
 }

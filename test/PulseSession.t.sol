@@ -140,6 +140,76 @@ contract PulseSessionTest is Test {
         vm.stopPrank();
     }
 
+    function testRearmRestoresAnExpiredSession() public {
+        vm.prank(owner);
+        session.deposit(100e6);
+        adapter.setStatus(marketOne, IPulseMarketAdapter.MarketStatus.Trading);
+
+        vm.warp(block.timestamp + 3 hours); // past the 2 hour policy expiry
+        vm.prank(owner);
+        vm.expectRevert(PulseSession.SessionExpired.selector);
+        session.place(marketOne, 0, 10e6);
+
+        vm.prank(owner);
+        session.rearm(uint64(block.timestamp + 2 hours), 4);
+
+        assertTrue(session.armed());
+        assertEq(session.windowsUsed(), 0);
+
+        vm.prank(owner);
+        session.place(marketOne, 0, 10e6);
+    }
+
+    function testRearmRestoresADisarmedSession() public {
+        vm.startPrank(owner);
+        session.deposit(100e6);
+        session.disarm();
+        vm.stopPrank();
+        adapter.setStatus(marketOne, IPulseMarketAdapter.MarketStatus.Trading);
+
+        vm.prank(owner);
+        vm.expectRevert(PulseSession.WindowLimitReached.selector);
+        session.place(marketOne, 0, 10e6);
+
+        vm.prank(owner);
+        session.rearm(uint64(block.timestamp + 1 hours), 2);
+
+        vm.prank(owner);
+        session.place(marketOne, 0, 10e6);
+    }
+
+    function testRearmKeepsTheStakeCapImmutable() public {
+        vm.startPrank(owner);
+        session.deposit(100e6);
+        session.rearm(uint64(block.timestamp + 1 hours), 8);
+        vm.stopPrank();
+        adapter.setStatus(marketOne, IPulseMarketAdapter.MarketStatus.Trading);
+
+        (uint256 maxStakePerWindow,,,) = session.policy();
+        vm.prank(owner);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                PulseSession.StakeTooHigh.selector, maxStakePerWindow + 1, maxStakePerWindow
+            )
+        );
+        session.place(marketOne, 0, maxStakePerWindow + 1);
+    }
+
+    function testRearmRejectsPastExpiryAndZeroWindows() public {
+        vm.startPrank(owner);
+        vm.expectRevert(PulseSession.InvalidPolicy.selector);
+        session.rearm(uint64(block.timestamp), 4);
+        vm.expectRevert(PulseSession.InvalidPolicy.selector);
+        session.rearm(uint64(block.timestamp + 1 hours), 0);
+        vm.stopPrank();
+    }
+
+    function testRearmRequiresOwner() public {
+        vm.prank(address(0xB0B));
+        vm.expectRevert(PulseSession.NotOwner.selector);
+        session.rearm(uint64(block.timestamp + 1 hours), 4);
+    }
+
     function testOnlyOwnerCanMoveFunds() public {
         vm.prank(owner);
         session.deposit(100e6);
