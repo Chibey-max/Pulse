@@ -10,16 +10,21 @@ Evidence page: https://pulse-session.vercel.app/judge
 
 ## Before you hit record
 
-1. **Redeploy first.** The production bundle can fall behind `main`, and when it does the
-   live board renders no market at all — DreamDEX rolls to a new window and the deployed
-   code never finds it. Run `vercel deploy --prod`, then re-point the alias
-   (`vercel alias set <new-deployment> pulse-session.vercel.app`) — the alias is pinned and
-   does not follow production on its own.
-2. **Confirm the board is alive.** Open `/app` and wait for a market card: pair, `#id`,
+1. **Confirm the board is alive.** Open `/app` and wait for a market card: pair, `#id`,
    `TRADING`, a countdown, a strike, and order-book rows. If the strike is a dash, wait
-   ~30s for the next indexer refetch. Do not record until it resolves.
-3. **Pick a fresh window.** Aim for one with 15+ minutes left. A window inside its last two
-   minutes drops the strike and thins the book on camera.
+   ~30s for the next indexer refetch. If the card is missing entirely, reload — window
+   discovery swallows its errors and returns an empty board, and it usually recovers on the
+   next attempt. Do not record until you have a card with a strike.
+2. **Pick a fresh window and never demo one near zero.** Aim for 15+ minutes left. The
+   countdown ticks locally while the market list refetches every 30s, so a resolved window
+   keeps its `TRADING` chip and live Call buttons for up to half a minute after it expires —
+   and the contract will reject the call. A window inside its last two minutes also drops
+   the strike and thins the book on camera.
+3. **Warm the session allow-list before recording.** A window that rolled in after the
+   session was funded is not in the clone's allow-list, so the first call on it spends an
+   extra `addAllowedMarket` transaction (plus a settlement subscription) before the place
+   goes through. Place one throwaway call on the window you intend to demo, or simply do
+   not place a call on camera — this script does not require one.
 4. **Connect the wallet before you record.** The realised/unclaimed strip at the top of
    `/app` takes ~20 seconds to populate after connecting and is not part of this script —
    let it fill while you are still setting up.
