@@ -8,9 +8,12 @@ export interface NavItem {
 
 // === Marketing
 
-/* Header nav is deliberately minimal: Home and FAQ only. */
+/* Marketing header points to the product surfaces a judge or trader actually needs. */
 export const MARKETING_NAV: readonly NavItem[] = [
-  { label: "Home", href: "/" },
+  { label: "Markets", href: "/markets" },
+  { label: "Faucet", href: "/faucet" },
+  { label: "Positions", href: "/positions" },
+  { label: "Activity", href: "/activity" },
   { label: "FAQ", href: "/faq" },
 ];
 
