@@ -6,6 +6,158 @@ Primary URL: https://pulse-session.vercel.app
 
 Evidence fallback: https://pulse-session.vercel.app/judge
 
+## Final Recording Pass
+
+Use this section as the actual take. Keep it calm, quick, and evidence-first.
+
+### Tabs
+
+Open these before recording:
+
+- `https://pulse-session.vercel.app`
+- `https://pulse-session.vercel.app/app`
+- `https://pulse-session.vercel.app/markets`
+- `https://pulse-session.vercel.app/faucet`
+- `https://pulse-session.vercel.app/positions`
+- `https://pulse-session.vercel.app/activity`
+- `https://pulse-session.vercel.app/judge`
+- Terminal in the repo, ready to run `pnpm verify:evidence`
+
+### Take 1: Full 2:45 Demo
+
+#### 0:00-0:18 - Opening
+
+Screen: landing page.
+
+Say:
+
+"This is Pulse. Pulse is not a new prediction market. It is a session layer on top of DreamDEX Event Contracts on Somnia. DreamDEX provides the BTC and ETH Up/Down windows. Pulse makes those windows usable as a repeatable capped-risk product, with direct claiming and session-held settlement."
+
+Click: `Open app`.
+
+#### 0:18-0:45 - Live Desk
+
+Screen: `/app`.
+
+Say:
+
+"Here is the live desk. The app reads real DreamDEX windows on Somnia Shannon: BTC or ETH, currently showing the active one-hour window. The user sees the countdown, market id, strike when the reference answer is indexed, the live order book, and the Up and Down call buttons. The maximum loss is the stake, so the risk is capped before the transaction is signed."
+
+Show:
+
+- Pair and window
+- Market id
+- Countdown
+- Stake chips
+- Up/Down prices
+- Book
+
+Do not wait on strike if it is blank. Say:
+
+"If the strike field is blank, that is the reference-opening answer still waiting on the DreamDEX indexer. The market id, expiry, pool, and book are live chain data; Pulse does not invent the strike."
+
+#### 0:45-1:10 - Direct Mode
+
+Screen: keep `/app`, or go to `/positions`.
+
+Say:
+
+"Direct mode is the normal wallet path. The user places a call from their EOA. Later, Pulse can group redeemable wallet positions into claim-all, so users do not have to hunt through old event windows manually."
+
+If you place a live call, use a small stake. If MetaMask gas or liquidity stalls, cancel and say:
+
+"For the recording I will not burn time on testnet gas. The app exposes the failure clearly, and the settlement proof is already verified onchain."
+
+#### 1:10-1:38 - Session Mode
+
+Screen: `/app`, session panel.
+
+Say:
+
+"Session mode is the core product. A user creates a per-wallet PulseSession clone, approves tUSDC, and funds the vault. That is three transactions. After setup, the clone enforces the session policy onchain: the owner, allowed markets, max stake, window limit, and whether the session is armed."
+
+Show:
+
+- Session balance
+- Armed state
+- Windows left
+- Rule
+- Fund, withdraw, disarm
+
+Say:
+
+"The session is owner-controlled. It is not a custody shortcut and it is not an autonomous trading bot. The owner still chooses the calls; the contract enforces the limits."
+
+#### 1:38-2:20 - The Hackathon Proof
+
+Screen: `/judge`.
+
+Say:
+
+"The hackathon proof is settlement. Pulse subscribes the session to DreamDEX market-finalized events through Somnia Reactivity. When the event fires, validators invoke the session handler through the Reactivity precompile at `0x0100`, and the session redeems its tracked outcome tokens."
+
+Scroll to hash trail.
+
+Say:
+
+"This page is not rehearsal material; it is the public evidence trail. It shows the factory, implementation, session clone, subscription transaction, session call, and validator redemption transaction."
+
+Open or point to validator redemption tx:
+
+`0xe9bf34787416a0c46814b717868921a43d07491217b46ad03bd48124b14ef7b2`
+
+Say:
+
+"The callback selector is `0x53edf33d`, which is `onEvent(address,bytes32[],bytes)`. The session rejects any caller except the Reactivity precompile, so this successful redemption was invoked through the chain path, not by a user clicking claim."
+
+#### 2:20-2:40 - Reproducible Verifier
+
+Screen: terminal.
+
+Run:
+
+```bash
+pnpm verify:evidence
+```
+
+Say:
+
+"The repo includes a read-only verifier. No wallet, no funds, no gas. It re-reads public Shannon RPC, decodes the callback, checks the emitted topics, checks the credited amount, confirms the clone delegates to the implementation, and checks that the corrected handler selector is present."
+
+Pause on:
+
+"All checks passed. The redemption was invoked by the chain, not the owner."
+
+#### 2:40-2:55 - Close
+
+Screen: back to `/app`.
+
+Say:
+
+"Pulse turns Event Contracts from isolated one-window trades into a repeatable session experience. DreamDEX supplies the market primitive. Pulse adds the product layer: capped calls, session policy, claim-all, and verifiable validator-invoked redemption through Somnia Reactivity."
+
+Stop recording on the app, not the terminal.
+
+### 90-Second Emergency Cut
+
+Use this if the live network is slow.
+
+1. Landing: "Pulse is a session layer on DreamDEX Event Contracts. It does not create the markets; it makes them repeatable."
+2. `/app`: "Live BTC/ETH Up/Down windows, capped stake, market id, order book, and session controls."
+3. Session panel: "Session setup is three transactions: clone, approve, fund. The clone enforces owner, max stake, windows, and allowed markets."
+4. `/judge`: "The proof is validator-invoked redemption through Somnia Reactivity."
+5. Validator tx: "The handler selector is `0x53edf33d`; the contract only accepts the precompile."
+6. Terminal: "`pnpm verify:evidence` re-checks the whole trail from public RPC."
+
+### Testnet Recovery Lines
+
+Use these instead of debugging live on camera:
+
+- "The live desk is using real Shannon/DreamDEX data, so when the indexer is slow Pulse shows only verified fields instead of mock values."
+- "The blank strike means the reference-opening answer has not returned from the indexer; Pulse does not fabricate it."
+- "The trade path depends on wallet gas and book liquidity. The settlement path is proven by the hash trail and verifier."
+- "This is testnet collateral only; the faucet mints fake tUSDC, while STT gas still has to come from a Somnia faucet."
+
 ## Goal
 
 Make judges understand Pulse in the first 20 seconds:
