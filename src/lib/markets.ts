@@ -7,7 +7,7 @@ import {
   type SomniaMarketsConfig,
   type UnifiedOrder,
 } from "@somnia-chain/markets-sdk";
-import type { WalletClient } from "viem";
+import { createPublicClient, http, parseAbi, type Address, type WalletClient } from "viem";
 import { getPulseChain, SOMNIA_MAINNET_CHAIN_ID } from "./chain";
 import type { CallSide, MarketCard, PulsePair, PulseWindow, WindowStatus } from "./types";
 
@@ -103,6 +103,43 @@ export function getOutcomeSymbol(marketSymbol: string, side: CallSide) {
 
 const PULSE_ASSETS = new Set(["BTC", "ETH"]);
 const PULSE_WINDOWS = new Set<PulseWindow>(["15m", "1h"]);
+const CURRENT_ROLLING_CREATORS = [
+  /*
+    Current DreamDEX rolling creator observed on Shannon for the BTC/ETH 1h series.
+    The SDK's baked marketCreator address still points at an older creator whose 15m/1h
+    series expired, so the live board reads creator state directly before falling back to
+    the indexer.
+  */
+  "0x94D963B6670AB96E78C8d0C46ca35D196d606EFE",
+] as const satisfies readonly Address[];
+const MARKET_CREATOR_SERIES = [
+  { seriesId: 1, asset: "BTC", window: "15m" },
+  { seriesId: 2, asset: "ETH", window: "15m" },
+  { seriesId: 3, asset: "BTC", window: "1h" },
+  { seriesId: 4, asset: "ETH", window: "1h" },
+] as const satisfies ReadonlyArray<{ seriesId: number; asset: PulsePair; window: PulseWindow }>;
+const PULSE_QUOTE_DECIMALS = 6;
+
+const CURRENT_CREATOR_ENV = process.env.NEXT_PUBLIC_MARKET_CREATORS;
+const PULSE_MARKET_CREATORS = (
+  CURRENT_CREATOR_ENV
+    ? CURRENT_CREATOR_ENV.split(",")
+        .map((item) => item.trim())
+        .filter((item): item is Address => /^0x[a-fA-F0-9]{40}$/.test(item))
+    : CURRENT_ROLLING_CREATORS
+) as readonly Address[];
+
+const marketCreatorLiveAbi = parseAbi([
+  "function referenceQidBySeries(uint32 seriesId) view returns (uint256 qid)",
+]);
+
+const oracleHubLiveAbi = parseAbi([
+  "function marketsForQuestion(uint256 oracleQuestionId) view returns (bytes32[] markets)",
+]);
+
+const binaryModuleLiveAbi = parseAbi([
+  "function markets(bytes32 marketId) view returns ((uint256 oracleQuestionId, uint8 outcomeSlotCount, uint8 voidPolicy, address collateral, uint32 originOperatorId, bytes32 originVenueId, address oracleAdapter, address creator, address market, address pool, uint256 yesId, uint256 noId, uint64 tradingStart, uint64 expiry) record)",
+]);
 
 export interface LiveWindow extends MarketCard {
   /* Kept off MarketCard so components stay presentational; the live book path needs them. */
@@ -120,7 +157,14 @@ export interface LiveWindow extends MarketCard {
   which walks the full historical set.
 */
 export async function loadLiveWindows(exchange = createPulseExchange()): Promise<LiveWindow[]> {
-  const rows = await exchange.client.listLiveBinaryMarkets({ limit: 40, orderBy: "closingSoon" });
+  const onchain = await loadLiveWindowsFromCreators();
+  if (onchain.length > 0) return onchain;
+
+  const rows = await withTimeout(
+    exchange.client.listLiveBinaryMarkets({ limit: 40, orderBy: "closingSoon" }),
+    4_000,
+    "live binary market list",
+  );
 
   const windows = rows
     .filter((row) => PULSE_ASSETS.has(row.asset.toUpperCase()))
@@ -128,14 +172,149 @@ export async function loadLiveWindows(exchange = createPulseExchange()): Promise
     .map(toLiveWindow);
 
   const openingByMarket = await safeOpeningPrices(
-    exchange,
     windows.map((w) => w.marketId),
+    exchange,
   );
 
   return windows.map((w) => ({
     ...w,
     strike: openingByMarket[w.marketId.toLowerCase()] ?? w.strike,
   }));
+}
+
+async function loadLiveWindowsFromCreators(): Promise<LiveWindow[]> {
+  if (PULSE_MARKET_CREATORS.length === 0) return [];
+
+  try {
+    const chain = getPulseChain();
+    const addresses =
+      chain.id === SOMNIA_MAINNET_CHAIN_ID ? SOMNIA_MAINNET_ADDRESSES : SOMNIA_TESTNET_ADDRESSES;
+    const binaryModule = addresses.binaryModule;
+    const oracleHub = addresses.oracleHub;
+    if (!binaryModule || !oracleHub) return [];
+
+    const publicClient = createPublicClient({
+      chain,
+      transport: http(process.env.NEXT_PUBLIC_RPC_URL),
+    });
+    const now = Math.floor(Date.now() / 1000);
+
+    const qidCalls = PULSE_MARKET_CREATORS.flatMap((creator) =>
+      MARKET_CREATOR_SERIES.map((series) => ({
+        ...series,
+        creator,
+        contract: {
+          address: creator,
+          abi: marketCreatorLiveAbi,
+          functionName: "referenceQidBySeries",
+          args: [series.seriesId],
+        },
+      })),
+    );
+
+    const qidResults = await publicClient.multicall({
+      allowFailure: true,
+      contracts: qidCalls.map((call) => call.contract),
+    });
+
+    const candidates: Array<{
+      asset: PulsePair;
+      window: PulseWindow;
+      qid: bigint;
+    }> = [];
+
+    qidCalls.forEach((call, index) => {
+      const qid = qidResults[index];
+      if (qid.status !== "success" || qid.result === BigInt(0)) return;
+
+      candidates.push({
+        asset: call.asset,
+        window: call.window,
+        qid: qid.result as bigint,
+      });
+    });
+
+    const marketIdResults = await publicClient.multicall({
+      allowFailure: true,
+      contracts: candidates.map((candidate) => ({
+        address: oracleHub,
+        abi: oracleHubLiveAbi,
+        functionName: "marketsForQuestion",
+        args: [candidate.qid],
+      })),
+    });
+
+    const marketCandidates = candidates
+      .map((candidate, index) => {
+        const result = marketIdResults[index];
+        if (result.status !== "success") return null;
+        const marketIds = result.result as readonly `0x${string}`[];
+        const marketId = marketIds[marketIds.length - 1];
+        return marketId ? { ...candidate, marketId } : null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    const [recordResults, openingByMarket] = await Promise.all([
+      publicClient.multicall({
+        allowFailure: true,
+        contracts: marketCandidates.map((candidate) => ({
+          address: binaryModule,
+          abi: binaryModuleLiveAbi,
+          functionName: "markets",
+          args: [candidate.marketId],
+        })),
+      }),
+      safeOpeningPrices(marketCandidates.map((candidate) => candidate.marketId)),
+    ]);
+
+    const rows: Array<LiveWindow | null> = marketCandidates.map((candidate, index) => {
+      const result = recordResults[index];
+      if (result.status !== "success") return null;
+      const record = result.result as {
+        collateral: Address;
+        pool: Address;
+        tradingStart: bigint;
+        expiry: bigint;
+      };
+      if (Number(record.expiry) <= now) return null;
+
+      return {
+        marketId: candidate.marketId,
+        symbol: `${candidate.asset}-${candidate.window}`,
+        pair: candidate.asset,
+        window: candidate.window,
+        strike: openingByMarket[candidate.marketId.toLowerCase()] ?? "",
+        expiryTs: Number(record.expiry),
+        status: (now < Number(record.tradingStart) ? "listed" : "trading") as WindowStatus,
+        upPrice: null,
+        downPrice: null,
+        poolAddress: record.pool,
+        quoteDecimals: PULSE_QUOTE_DECIMALS,
+        winningOutcome: null,
+        voided: false,
+      } satisfies LiveWindow;
+    });
+
+    return rows
+      .filter((row): row is LiveWindow => row !== null)
+      .sort((a, b) => a.expiryTs - b.expiryTs);
+  } catch {
+    return [];
+  }
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
 }
 
 export async function getLiveWindow(
@@ -209,23 +388,114 @@ function toLiveWindow(row: BinaryMarket): LiveWindow {
 }
 
 async function safeOpeningPrices(
-  exchange: SomniaMarkets,
   marketIds: string[],
+  exchange?: SomniaMarkets,
 ): Promise<Record<string, string>> {
   if (marketIds.length === 0) return {};
   try {
-    const raw = await exchange.client.getOpeningPrices(marketIds);
-    const out: Record<string, string> = {};
-    for (const [id, value] of Object.entries(raw)) {
-      const display = displayStrike(value);
-      if (display) out[id.toLowerCase()] = display;
-    }
-    return out;
+    return await fetchOpeningPrices(marketIds);
   } catch {
-    // The opening-price query on the dev indexer is intermittently unavailable. A missing
-    // strike is a "—" in the UI, never a blocker on the market list.
+    if (!exchange) return {};
+  }
+
+  try {
+    return await withTimeout(
+      exchange.client.getOpeningPrices(marketIds).then(formatOpeningPriceMap),
+      4_000,
+      "opening prices",
+    );
+  } catch {
     return {};
   }
+}
+
+/*
+  The strike lives behind two small indexer queries (market -> reference question ->
+  oracle answer). Measured on Shannon they answer in ~0.5-1.5s but spike past 4s, so the
+  pair shares ONE budget rather than a timeout each: two 2.5s caps bound the worst case at
+  5s, which is worse than the spike we are trying to survive. This runs alongside the
+  chain multicalls that already cost ~2.7s, so in the common case it is free, and a stalled
+  indexer costs a blank strike rather than a blank board.
+*/
+const OPENING_PRICE_BUDGET_MS = 5_000;
+
+async function fetchOpeningPrices(marketIds: string[]): Promise<Record<string, string>> {
+  const deadline = Date.now() + OPENING_PRICE_BUDGET_MS;
+  const remaining = () => Math.max(0, deadline - Date.now());
+
+  const ids = marketIds.map((id) => id.toLowerCase());
+  const refs = await gqlWithTimeout<{
+    MarketReferenceLink: Array<{ market: string; referenceQuestionId: string }>;
+  }>(
+    `
+      query OpeningRefs($ids: [String!]) {
+        MarketReferenceLink(where: { market_id: { _in: $ids } }) {
+          market: market_id
+          referenceQuestionId
+        }
+      }
+    `,
+    { ids },
+    remaining(),
+  );
+
+  const qids = [...new Set(refs.MarketReferenceLink.map((row) => row.referenceQuestionId))];
+  if (qids.length === 0) return {};
+
+  const answers = await gqlWithTimeout<{
+    OracleAnswer: Array<{ id: string; numericValue: string | null }>;
+  }>(
+    `
+      query OpeningAnswers($qids: [String!]) {
+        OracleAnswer(where: { id: { _in: $qids } }) {
+          id
+          numericValue
+        }
+      }
+    `,
+    { qids },
+    remaining(),
+  );
+
+  const valueByQid = new Map(answers.OracleAnswer.map((row) => [row.id, row.numericValue]));
+  const raw: Record<string, string | null> = {};
+  for (const ref of refs.MarketReferenceLink) {
+    raw[ref.market.toLowerCase()] = valueByQid.get(ref.referenceQuestionId) ?? null;
+  }
+
+  return formatOpeningPriceMap(raw);
+}
+
+async function gqlWithTimeout<TData>(
+  query: string,
+  variables: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<TData> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(PUBLIC_INDEXER_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query, variables }),
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`Indexer request failed with ${response.status}`);
+    const payload = (await response.json()) as { data?: TData; errors?: unknown };
+    if (!payload.data || payload.errors) throw new Error("Indexer returned no opening data");
+    return payload.data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function formatOpeningPriceMap(raw: Record<string, string | null>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [id, value] of Object.entries(raw)) {
+    const display = displayStrike(value);
+    if (display) out[id.toLowerCase()] = display;
+  }
+  return out;
 }
 
 /*

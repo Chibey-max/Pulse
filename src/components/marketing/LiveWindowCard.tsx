@@ -21,7 +21,7 @@ export function LiveWindowCard() {
   useEffect(() => {
     if (!isLoading) return;
 
-    const timer = window.setTimeout(() => setSlowFeed(true), 2_800);
+    const timer = window.setTimeout(() => setSlowFeed(true), 6_000);
     return () => window.clearTimeout(timer);
   }, [isLoading]);
 

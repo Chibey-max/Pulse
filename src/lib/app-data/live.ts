@@ -148,23 +148,163 @@ async function getContractCreationBlock(address: Address): Promise<bigint> {
 const LOG_CHUNK_BLOCKS = BigInt(999);
 
 /*
- * eth_getLogs in <=1000-block windows from `fromBlock` to `latest`, concatenated. Chunks
- * fetch in parallel — fine here because every caller first bounds `fromBlock` to a specific
- * session's creation block (see getContractCreationBlock), so the range is always small in
- * practice (a session's active lifetime, not the chain's).
- */
-async function getLogsChunked<T>(
+  eth_getLogs in <=1000-block windows from `fromBlock` to `latest`, concatenated.
+
+  Somnia produces ~864,000 blocks a day (100ms blocks), so "scan from the session's
+  creation block" grows by ~864 chunks every day it stays open. Firing that as one
+  Promise.all pinned the browser's main thread — thousands of concurrent fetches plus a
+  viem ABI decode each. Two bounds keep it survivable:
+
+  LOG_FETCH_CONCURRENCY caps how many requests are in flight. MAX_LOG_CHUNKS bounds only
+  the FIRST scan for a key — it is a starting window, not a ceiling on history, because
+  BACKFILL_CHUNKS walks the range backward on subsequent polls until the contract's
+  creation block is covered. Nothing is permanently truncated; it just arrives over a few
+  polls instead of in one burst that freezes the tab.
+*/
+const LOG_FETCH_CONCURRENCY = 8;
+const MAX_LOG_CHUNKS = 180; // first scan: 180k blocks, ~5 hours of Shannon at 100ms
+const BACKFILL_CHUNKS = 60; // ~60k blocks reclaimed per poll until history is complete
+
+/*
+  Chain logs are append-only, so a scanned range never has to be scanned again. Each entry
+  records the window it has already covered; a poll then costs one chunk of new blocks
+  rather than a rescan, and BACKFILL_CHUNKS of older blocks are reclaimed per call until
+  `scannedFrom` reaches the contract's creation block. Full history is reached over a few
+  polls instead of in one burst that freezes the tab.
+*/
+interface LogCacheEntry {
+  scannedFrom: bigint;
+  scannedTo: bigint;
+  logs: unknown[];
+}
+
+const logCache = new Map<string, LogCacheEntry>();
+
+/* Bump when the stored shape changes so old entries are ignored rather than misread. */
+const LOG_CACHE_VERSION = 1;
+const LOG_CACHE_PREFIX = `pulse:logs:v${LOG_CACHE_VERSION}:`;
+/* localStorage caps around 5MB per origin; stop persisting an entry well before that. */
+const LOG_CACHE_MAX_BYTES = 512_000;
+
+/* JSON has no bigint. Tag them so blockNumber and every uint arg survive a round trip. */
+export function encodeLogs(value: unknown): string {
+  return JSON.stringify(value, (_key, val) =>
+    typeof val === "bigint" ? { __bigint: val.toString() } : val,
+  );
+}
+
+export function decodeLogs(raw: string): unknown {
+  return JSON.parse(raw, (_key, val) =>
+    val && typeof val === "object" && typeof (val as { __bigint?: string }).__bigint === "string"
+      ? BigInt((val as { __bigint: string }).__bigint)
+      : val,
+  );
+}
+
+function readPersistedLogs(cacheKey: string): LogCacheEntry | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(LOG_CACHE_PREFIX + cacheKey);
+    if (!raw) return undefined;
+    const parsed = decodeLogs(raw) as LogCacheEntry;
+    if (typeof parsed?.scannedFrom !== "bigint" || typeof parsed?.scannedTo !== "bigint") {
+      return undefined;
+    }
+    return parsed;
+  } catch {
+    return undefined;
+  }
+}
+
+function writePersistedLogs(cacheKey: string, entry: LogCacheEntry): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = encodeLogs(entry);
+    if (raw.length > LOG_CACHE_MAX_BYTES) return;
+    window.localStorage.setItem(LOG_CACHE_PREFIX + cacheKey, raw);
+  } catch {
+    /* Quota exceeded or storage disabled — the in-memory cache still works. */
+  }
+}
+
+function sortLogs<T>(logs: T[]): T[] {
+  return logs.sort((a, b) => {
+    const left = a as { blockNumber?: bigint; logIndex?: number };
+    const right = b as { blockNumber?: bigint; logIndex?: number };
+    const byBlock = (left.blockNumber ?? BigInt(0)) - (right.blockNumber ?? BigInt(0));
+    if (byBlock !== BigInt(0)) return byBlock > BigInt(0) ? 1 : -1;
+    return (left.logIndex ?? 0) - (right.logIndex ?? 0);
+  });
+}
+
+async function fetchRange<T>(
+  from: bigint,
+  to: bigint,
+  fetchChunk: (from: bigint, to: bigint) => Promise<T[]>,
+): Promise<T[]> {
+  const stride = LOG_CHUNK_BLOCKS + BigInt(1);
+  const ranges: Array<[bigint, bigint]> = [];
+  for (let start = from; start <= to; start += stride) {
+    const end = start + LOG_CHUNK_BLOCKS < to ? start + LOG_CHUNK_BLOCKS : to;
+    ranges.push([start, end]);
+  }
+
+  const out: T[][] = [];
+  for (let i = 0; i < ranges.length; i += LOG_FETCH_CONCURRENCY) {
+    const batch = ranges.slice(i, i + LOG_FETCH_CONCURRENCY);
+    out.push(...(await Promise.all(batch.map(([start, end]) => fetchChunk(start, end)))));
+  }
+  return out.flat();
+}
+
+export async function getLogsChunked<T>(
   fromBlock: bigint,
   toBlock: bigint,
   fetchChunk: (from: bigint, to: bigint) => Promise<T[]>,
+  cacheKey?: string,
 ): Promise<T[]> {
-  const ranges: Array<[bigint, bigint]> = [];
-  for (let start = fromBlock; start <= toBlock; start += LOG_CHUNK_BLOCKS + BigInt(1)) {
-    const end = start + LOG_CHUNK_BLOCKS < toBlock ? start + LOG_CHUNK_BLOCKS : toBlock;
-    ranges.push([start, end]);
+  const stride = LOG_CHUNK_BLOCKS + BigInt(1);
+
+  if (!cacheKey) {
+    const floor = toBlock - stride * BigInt(MAX_LOG_CHUNKS) + BigInt(1);
+    return fetchRange(fromBlock > floor ? fromBlock : floor, toBlock, fetchChunk);
   }
-  const chunks = await Promise.all(ranges.map(([from, to]) => fetchChunk(from, to)));
-  return chunks.flat();
+
+  const cached = logCache.get(cacheKey) ?? readPersistedLogs(cacheKey);
+  if (cached) logCache.set(cacheKey, cached);
+
+  if (!cached || cached.scannedTo < fromBlock || cached.scannedFrom < fromBlock) {
+    /* No usable history: seed with the most recent window and backfill on later polls. */
+    const floor = toBlock - stride * BigInt(MAX_LOG_CHUNKS) + BigInt(1);
+    const start = fromBlock > floor ? fromBlock : floor;
+    const seeded = sortLogs(await fetchRange(start, toBlock, fetchChunk));
+    const entry = { scannedFrom: start, scannedTo: toBlock, logs: seeded };
+    logCache.set(cacheKey, entry);
+    writePersistedLogs(cacheKey, entry);
+    return seeded;
+  }
+
+  let logs = cached.logs as T[];
+  let { scannedFrom, scannedTo } = cached;
+
+  /* Forward: the new blocks since the last read. Cheap, and the reason polls stay fast. */
+  if (scannedTo < toBlock) {
+    logs = [...logs, ...(await fetchRange(scannedTo + BigInt(1), toBlock, fetchChunk))];
+    scannedTo = toBlock;
+  }
+
+  /* Backward: reclaim a bounded slice of older history per call, until fully covered. */
+  if (scannedFrom > fromBlock) {
+    const target = scannedFrom - stride * BigInt(BACKFILL_CHUNKS);
+    const start = target > fromBlock ? target : fromBlock;
+    logs = [...(await fetchRange(start, scannedFrom - BigInt(1), fetchChunk)), ...logs];
+    scannedFrom = start;
+  }
+
+  const entry = { scannedFrom, scannedTo, logs: sortLogs(logs) };
+  logCache.set(cacheKey, entry);
+  writePersistedLogs(cacheKey, entry);
+  return entry.logs as T[];
 }
 
 function sessionEnabled(owner?: string): owner is Address {
@@ -261,23 +401,31 @@ async function getSessionRealizedStats(session: Address): Promise<{
     ]);
     const [decimals, placedLogs, redeemedLogs] = await Promise.all([
       client.readContract({ address: collateral.address, abi: erc20Abi, functionName: "decimals" }),
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: session,
-          abi: pulseSessionAbi,
-          eventName: "Placed",
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: session,
+            abi: pulseSessionAbi,
+            eventName: "Placed",
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${session}:Placed`,
       ),
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: session,
-          abi: pulseSessionAbi,
-          eventName: "Redeemed",
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: session,
+            abi: pulseSessionAbi,
+            eventName: "Redeemed",
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${session}:Redeemed`,
       ),
     ]);
 
@@ -374,24 +522,32 @@ async function getSessionEntryPrices(
       client.getBlockNumber(),
     ]);
     const [placedLogs, filledLogs] = await Promise.all([
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: session,
-          abi: pulseSessionAbi,
-          eventName: "Placed",
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: session,
+            abi: pulseSessionAbi,
+            eventName: "Placed",
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${session}:Placed`,
       ),
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: adapter,
-          abi: pulseMarketAdapterAbi,
-          eventName: "OutcomeRecorded",
-          args: { holder: session },
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: adapter,
+            abi: pulseMarketAdapterAbi,
+            eventName: "OutcomeRecorded",
+            args: { holder: session },
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${adapter}:OutcomeRecorded`,
       ),
     ]);
 
@@ -432,14 +588,18 @@ async function getSessionTradedMarketIds(session: Address): Promise<`0x${string}
       getContractCreationBlock(session),
       client.getBlockNumber(),
     ]);
-    const logs = await getLogsChunked(fromBlock, toBlock, (from, to) =>
-      client.getContractEvents({
-        address: session,
-        abi: pulseSessionAbi,
-        eventName: "Placed",
-        fromBlock: from,
-        toBlock: to,
-      }),
+    const logs = await getLogsChunked(
+      fromBlock,
+      toBlock,
+      (from, to) =>
+        client.getContractEvents({
+          address: session,
+          abi: pulseSessionAbi,
+          eventName: "Placed",
+          fromBlock: from,
+          toBlock: to,
+        }),
+      `${session}:Placed`,
     );
     return [...new Set(logs.map((log) => log.args.marketId as `0x${string}`))];
   } catch {
@@ -773,23 +933,31 @@ async function readSessionRedemptions(session: Address): Promise<TapeEntry[]> {
     const [decimals, windows, placedLogs, redeemedLogs] = await Promise.all([
       client.readContract({ address: collateral.address, abi: erc20Abi, functionName: "decimals" }),
       ensureWindows().catch(() => [] as LiveWindow[]),
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: session,
-          abi: pulseSessionAbi,
-          eventName: "Placed",
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: session,
+            abi: pulseSessionAbi,
+            eventName: "Placed",
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${session}:Placed`,
       ),
-      getLogsChunked(fromBlock, toBlock, (from, to) =>
-        client.getContractEvents({
-          address: session,
-          abi: pulseSessionAbi,
-          eventName: "Redeemed",
-          fromBlock: from,
-          toBlock: to,
-        }),
+      getLogsChunked(
+        fromBlock,
+        toBlock,
+        (from, to) =>
+          client.getContractEvents({
+            address: session,
+            abi: pulseSessionAbi,
+            eventName: "Redeemed",
+            fromBlock: from,
+            toBlock: to,
+          }),
+        `${session}:Redeemed`,
       ),
     ]);
     if (redeemedLogs.length === 0) return [];

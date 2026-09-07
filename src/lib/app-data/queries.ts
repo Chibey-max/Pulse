@@ -11,11 +11,21 @@ import { getDataSource } from "./source";
 
 const source = getDataSource();
 
+/*
+  Window discovery (which market id is currently live per series), not a price feed —
+  useOrderBook already refreshes price/book at 4s independently. Resolving it walks a
+  5-hop dependent chain (3 sequential on-chain multicalls, each keyed off the last one's
+  result, plus 2 indexer queries for strike) that costs ~1s warm and can spike past 6s
+  under RPC/indexer load. A window is live for a minimum of 15 minutes, so polling this
+  every 5s bought no real freshness — it just meant a slow tick could still be in flight
+  when the next one fired, and each carries its own retries on top. 30s still catches a
+  roll well within a single window.
+*/
 export function useMarkets() {
   return useQuery({
     queryKey: ["markets"],
     queryFn: () => source.listMarkets(),
-    refetchInterval: 5_000,
+    refetchInterval: 30_000,
   });
 }
 
@@ -24,7 +34,7 @@ export function useMarket(marketId: string | undefined) {
     queryKey: ["market", marketId],
     queryFn: () => source.getMarket(marketId as string),
     enabled: Boolean(marketId),
-    refetchInterval: 5_000,
+    refetchInterval: 30_000,
   });
 }
 

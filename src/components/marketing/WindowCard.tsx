@@ -16,8 +16,9 @@ export interface WindowCardProps {
   book; Down is always 1 - Up, derived, never a second feed.
 */
 export function WindowCard({ market, className }: WindowCardProps) {
-  const up = market.upPrice ?? 0;
-  const down = market.downPrice ?? 1 - up;
+  const upPrice = market.upPrice;
+  const downPrice = market.downPrice;
+  const hasBook = upPrice !== null && downPrice !== null;
 
   return (
     <TiltCard className={className}>
@@ -52,9 +53,15 @@ export function WindowCard({ market, className }: WindowCardProps) {
               Implied
             </dt>
             <dd className="text-body font-mono-numbers flex items-baseline gap-2 font-mono">
-              <span className="text-up">Up {up.toFixed(2)}</span>
-              <span className="text-text-muted">/</span>
-              <span className="text-down">Down {down.toFixed(2)}</span>
+              {hasBook ? (
+                <>
+                  <span className="text-up">Up {upPrice.toFixed(2)}</span>
+                  <span className="text-text-muted">/</span>
+                  <span className="text-down">Down {downPrice.toFixed(2)}</span>
+                </>
+              ) : (
+                <span className="text-text-secondary">Book syncing</span>
+              )}
             </dd>
           </div>
         </dl>
