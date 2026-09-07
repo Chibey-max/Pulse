@@ -18,11 +18,19 @@ The winning point is not "another prediction market." The winning point is:
 
 ## Recording Setup
 
+Record against the deployed site, not `localhost`. `next dev` recompiles on every file
+save and the tab then hard-reloads mid-navigation ("Failed to fetch RSC payload"), which
+drops the MetaMask connection on camera. The production deployment has no HMR and cannot
+do this.
+
 Before recording:
 
 - Open Chrome with MetaMask visible but not covering key UI.
 - Use Somnia Shannon testnet, chain id `50312`.
 - Use a funded wallet with both STT and tUSDC.
+- Hard-reload each tab once (Ctrl+Shift+R) before you hit record, and let `/app` and
+  `/activity` finish their first load — session history is read from chain logs and the
+  first read is the slow one; it is cached afterwards.
 - Open these tabs:
   - `https://pulse-session.vercel.app`
   - `https://pulse-session.vercel.app/app`
@@ -131,6 +139,7 @@ Voice:
 Show these values if possible:
 
 - Factory: `0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84`
+- Implementation: `0x9a8C9Fceb88BEEBbE50E231674ab5F3C81CC69fe`
 - Session clone: `0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA`
 - Subscription tx: `0xae98302bd2b7dab0fc2f2f92b3f046fae43a80fced6e30773cf81d9eb094baef`
 - Session call tx: `0xc625de217a699d3538b5bce77d1eb3e5881379a13e6cac5c56eb833712dcccbb`
@@ -139,6 +148,16 @@ Show these values if possible:
 Voice:
 
 "The callback selector is `0x53edf33d`, which is `onEvent(address,bytes32[],bytes)`. The session handler rejects any caller except the Reactivity precompile, so this redemption path is enforced onchain."
+
+### Optional beat - Why This Lane Was Empty
+
+Use this if the cut has room. It is the strongest differentiation line available, because
+it explains why a validator-invoked handler is rare rather than just asserting Pulse has
+one.
+
+Voice:
+
+"Two things make this path easy to get wrong, and neither is documented. A subscription requires the owner to hold 32 SOMI, so it silently fails below that. And the handler has to be `onEvent(address,bytes32[],bytes)` exactly. An `onEvent(bytes)` handler compiles, deploys, and accepts a subscription, then never fires, with no on-chain trace to debug. We hit both, and the repo ships a feedback report documenting them."
 
 ### 2:20-2:40 - Verifier
 
@@ -150,7 +169,7 @@ pnpm verify:evidence
 
 Voice:
 
-"The repo includes a read-only verifier. It re-reads the public Shannon RPC, decodes the callback payload, checks the emitter and topics, checks the credited amount, and checks the handler bytecode for the precompile guard."
+"The repo includes a read-only verifier. Thirteen checks, no wallet, no funds, no gas. It re-reads the public Shannon RPC, decodes the callback payload, checks the emitter and topics, checks the credited amount, confirms the clone delegates to the implementation carrying the correct selector, and checks the handler rejects every caller except the precompile."
 
 Pause on:
 

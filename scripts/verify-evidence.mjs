@@ -130,6 +130,22 @@ check(
   Boolean(code) && code.toLowerCase().includes(ON_EVENT.slice(2)),
   "0x53edf33d present in implementation bytecode",
 );
+/*
+  The clone delegates to whatever address is baked into its EIP-1167 bytecode. Assert the
+  factory's implementation IS that address, so a published implementation can never drift
+  to a different contract than the one that actually served this redemption.
+*/
+const cloneCode = await client.getCode({ address: SESSION });
+check(
+  "clone delegates to the factory's implementation",
+  Boolean(cloneCode) && cloneCode.toLowerCase().includes(implementation.slice(2).toLowerCase()),
+  `clone bytecode embeds ${implementation}`,
+);
+check(
+  "handler does NOT expose the superseded onEvent(bytes)",
+  Boolean(code) && !code.toLowerCase().includes("0bde80f3"),
+  "0x0bde80f3 absent — this is the corrected handler, not the one that never fired",
+);
 
 console.log(
   failures === 0

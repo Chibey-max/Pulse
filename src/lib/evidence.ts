@@ -9,7 +9,13 @@ export const PULSE_EVIDENCE = {
   chain: "Somnia Shannon",
   chainId: 50312,
   factory: SESSION_FACTORY_ADDRESS,
-  implementation: "0x8ee927aff0a3965546feb4d5ab8edf7809cf8dfe",
+  /*
+    The implementation the current factory clones, and the address embedded in the clone's
+    EIP-1167 bytecode. It must be the one carrying selector 0x53edf33d — the previous
+    factory's implementation (0x8eE927aF…) exposes the wrong onEvent(bytes) signature that
+    never fires, so showing it here would contradict the redemption this page evidences.
+  */
+  implementation: "0x9a8C9Fceb88BEEBbE50E231674ab5F3C81CC69fe",
   clone: "0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA",
   binaryModule: BINARY_MODULE_ADDRESS,
   reactivityPrecompile: SOMNIA_REACTIVITY_PRECOMPILE,
