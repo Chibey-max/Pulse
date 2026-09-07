@@ -6,31 +6,44 @@ else is stage direction.
 Primary URL: https://pulse-session.vercel.app
 Evidence page: https://pulse-session.vercel.app/judge
 
+Live contracts as demoed:
+
+| What                   | Address                                      |
+| ---------------------- | -------------------------------------------- |
+| Session factory (app)  | `0x7c89D4Ab69F3C7e2e29C08B58407a4EBBa1244E4` |
+| Session implementation | `0xBE2aaEED50938463A8D79F44CeaEc6892176c2F7` |
+| Your session clone     | `0xE254c99b241d8358D03ba3E290FaE72Ef7aeaC8e` |
+| Evidence factory       | `0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84` |
+| Evidence clone         | `0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA` |
+
+The evidence pair is deliberately older: it deployed the clone that served the validator
+redemption, and `pnpm verify:evidence` checks those immutable addresses. The app runs on
+the newer factory because that one can re-arm a spent session.
+
 ---
 
 ## Before you hit record
 
-1. **Confirm the board is alive.** Open `/app` and wait for a market card: pair, `#id`,
-   `TRADING`, a countdown, a strike, and order-book rows. If the strike is a dash, wait
-   ~30s for the next indexer refetch. If the card is missing entirely, reload — window
-   discovery swallows its errors and returns an empty board, and it usually recovers on the
-   next attempt. Do not record until you have a card with a strike.
-2. **Pick a fresh window and never demo one near zero.** Aim for 15+ minutes left. The
-   countdown ticks locally while the market list refetches every 30s, so a resolved window
-   keeps its `TRADING` chip and live Call buttons for up to half a minute after it expires —
-   and the contract will reject the call. A window inside its last two minutes also drops
-   the strike and thins the book on camera.
-3. **Warm the session allow-list before recording.** A window that rolled in after the
-   session was funded is not in the clone's allow-list, so the first call on it spends an
-   extra `addAllowedMarket` transaction (plus a settlement subscription) before the place
-   goes through. Place one throwaway call on the window you intend to demo, or simply do
-   not place a call on camera — this script does not require one.
-4. **Connect the wallet before you record.** The realised/unclaimed strip at the top of
-   `/app` takes ~20 seconds to populate after connecting and is not part of this script —
-   let it fill while you are still setting up.
-5. **Have the verifier ready.** A terminal in the repo, cleared, with `pnpm verify:evidence`
+1. **Deploy the current `main`.** The app now points at the new factory, so the live site
+   must be rebuilt for session mode to work at all. Run `vercel deploy --prod`, then
+   re-point the alias (`vercel alias set <new-deployment> pulse-session.vercel.app`) — the
+   alias is pinned and does not follow production on its own.
+2. **Check the session is armed.** Open `/app` and look at the Session panel: it should
+   read `ARMED` with a vault balance and windows left. If it reads `Expired` or
+   `Disarmed`, click **Re-arm** — one transaction, and it is live again. The session
+   expires two hours after it is armed, so re-arm right before you record.
+3. **Confirm the board is alive.** Wait for a market card: pair, `#id`, `TRADING`, a
+   countdown, a strike, and order-book rows. If the strike is a dash, wait ~30s for the
+   next indexer refetch. Do not record until you have a card with a strike.
+4. **Pick a window with 5+ minutes left.** Expired windows now disable the Call buttons
+   correctly, but a window near zero still drops its strike and thins the book on camera.
+5. **Place one throwaway call before recording.** The first call on a freshly-rolled window
+   spends an extra `addAllowedMarket` transaction and a settlement subscription, which adds
+   10–20 seconds of toasts. Do it off camera so the demo call is instant — or skip placing
+   entirely, since this script does not require one.
+6. **Have the verifier ready.** A terminal in the repo, cleared, with `pnpm verify:evidence`
    typed but not yet run.
-6. **Record the deployment, not `next dev`.** HMR does a hard reload on save and will drop
+7. **Record the deployment, not `next dev`.** HMR does a hard reload on save and will drop
    your wallet connection mid-take.
 
 Tabs to open: `/`, `/app`, `/positions`, `/judge`, plus the terminal.
@@ -121,12 +134,14 @@ Say these instead of debugging on camera.
 
 - **Strike shows a dash:** "That's the reference-opening answer still coming from the
   DreamDEX indexer. Pulse shows the fields it can verify rather than inventing one."
-- **No market card at all:** stop recording and redeploy. Do not narrate around it — an
-  empty board is the one thing a judge will read as broken.
+- **Session reads Expired or Disarmed:** stop, click **Re-arm**, wait for the transaction,
+  start the take again. Do not narrate over a dead session.
+- **No market card at all:** reload once. Discovery now logs its failure to the console, so
+  if it persists, check there rather than guessing.
 - **A page is slow:** "This is live testnet data, not a mock." Then move on; do not wait on
   it in silence.
-- **You want to place a real call and it stalls:** cancel it. "The settlement path is
-  already proven on chain — I'm not going to spend the demo on testnet gas."
+- **You place a call and it stalls:** cancel it. "The settlement path is already proven on
+  chain — I'm not going to spend the demo on testnet gas."
 
 ---
 
