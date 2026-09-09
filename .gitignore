@@ -11,6 +11,12 @@
 *.sln.docstates
 *.env
 
+# Local submission and demo prep artifacts
+docs/DEMO_VIDEO_SCRIPT.md
+docs/DORAHACKS_SUBMISSION.md
+docs/CLAUDE-DESIGN-BRIEF.md
+pulse-demo.mp4
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
