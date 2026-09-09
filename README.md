@@ -8,6 +8,7 @@ inside a per-user clone, and let Somnia Reactivity redeem session-held winning
 positions when the market finalizes.
 
 - Live app: https://pulse-session.vercel.app
+- Demo video: https://youtu.be/Dm4aPn5rOS0
 - Hackathon: Somnia x DreamDEX Event Contracts
 - Network: Somnia Shannon testnet, chain id `50312`
 - SDK: `@somnia-chain/markets-sdk@0.29.0`
