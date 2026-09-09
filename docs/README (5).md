@@ -1,6 +1,6 @@
 # Pulse
 
-**Your winnings come to you.**
+**Session Layer for DreamDEX Event Contracts.**
 
 Pulse is a session layer for [DreamDEX Event Contracts](https://docs.dreamdex.io/trading/event-contracts) on [Somnia](https://somnia.network). Call the next candle in one tap, track settlement state, and keep every session claim tied to observable handler proof.
 

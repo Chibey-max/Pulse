@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 
 export const SITE = {
   name: "Pulse",
-  tagline: "Your winnings come to you.",
+  tagline: "Session Layer for DreamDEX Event Contracts",
   description:
-    "Pulse turns a sequence of BTC and ETH Up/Down event-contract windows into one continuous, capped-risk session on Somnia. Call the next candle, track live windows, and keep risk capped on Shannon testnet.",
+    "Pulse wraps DreamDEX BTC/ETH Up/Down Event Contracts with capped-risk calls, per-user session vaults, claim-all, and Reactivity-backed settlement on Somnia Shannon.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://pulse-session.vercel.app",
   author: "Pulse",
 } as const;
@@ -16,6 +16,8 @@ export const BASE_KEYWORDS: readonly string[] = [
   "Somnia",
   "DreamDEX",
   "Event Contracts",
+  "session layer",
+  "session vaults",
   "prediction markets",
   "Somnia Reactivity",
   "onchain settlement",

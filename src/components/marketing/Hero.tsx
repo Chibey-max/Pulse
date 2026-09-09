@@ -18,7 +18,7 @@ export function Hero() {
         <Reveal stagger amount={0.2} className="flex flex-col gap-6">
           <Reveal child>
             <p className="text-micro text-signal font-mono tracking-[0.2em] uppercase">
-              {SITE.name} · Somnia × DreamDEX Event Contracts
+              Pulse · Session Layer for DreamDEX Event Contracts
             </p>
           </Reveal>
           <Reveal child>
@@ -28,8 +28,8 @@ export function Hero() {
           </Reveal>
           <Reveal child>
             <p className="text-lead text-text-secondary max-w-xl text-pretty">
-              Call the next BTC or ETH candle in one tap. Pulse shows live windows, capped stake,
-              settlement state, and session limits without inventing handler proof.
+              Trade BTC or ETH Up/Down windows with capped risk, then use session vaults and Somnia
+              Reactivity to keep settlement tied to on-chain proof.
             </p>
           </Reveal>
           <Reveal child className="flex flex-wrap items-center gap-3">
@@ -42,7 +42,7 @@ export function Hero() {
           </Reveal>
           <Reveal child>
             <p className="text-micro text-text-muted font-mono tracking-wider uppercase">
-              Somnia Shannon testnet · capped risk · you can only lose the stake
+              Somnia Shannon testnet · DreamDEX markets · user-owned sessions
             </p>
           </Reveal>
         </Reveal>

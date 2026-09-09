@@ -46,7 +46,7 @@ export default function OpengraphImage() {
       </div>
 
       <span style={{ fontSize: 22, color: "#9aa6bd" }}>
-        Call the next candle. Track live BTC and ETH windows.
+        Capped BTC/ETH calls. Session vaults. Reactivity settlement proof.
       </span>
     </div>,
     size,

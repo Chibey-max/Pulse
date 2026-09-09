@@ -13,7 +13,7 @@ import {
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
-  title: "Your winnings come to you",
+  title: "Session Layer for DreamDEX Event Contracts",
   path: "/",
 });
 

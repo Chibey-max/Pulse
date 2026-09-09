@@ -1,6 +1,6 @@
 # Pulse
 
-**Noncustodial sessions for DreamDEX Event Contracts on Somnia.**
+**Session Layer for DreamDEX Event Contracts on Somnia.**
 
 Pulse turns BTC/ETH Up/Down windows into a capped-risk session flow: connect on
 Somnia Shannon, place calls through DreamDEX Event Contracts, keep session funds
@@ -46,6 +46,7 @@ and precompile guard for a validator-invoked settlement.
 | Item                           | Value                                                                |
 | ------------------------------ | -------------------------------------------------------------------- |
 | Factory with corrected handler | `0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84`                         |
+| Current app factory            | `0x7c89D4Ab69F3C7e2e29C08B58407a4EBBa1244E4`                         |
 | Session clone                  | `0x5bc72C8fD675D0316c58196ab677E0277f6eF5eA`                         |
 | Reactivity subscription tx     | `0xae98302bd2b7dab0fc2f2f92b3f046fae43a80fced6e30773cf81d9eb094baef` |
 | Session call tx                | `0xc625de217a699d3538b5bce77d1eb3e5881379a13e6cac5c56eb833712dcccbb` |
@@ -75,9 +76,10 @@ Details live in [docs/EVIDENCE.md](docs/EVIDENCE.md).
 | `PulseSession`        | Holds session collateral, enforces max stake/windows/expiry, places through the adapter, and redeems via Reactivity. |
 | `SomniaBinaryAdapter` | Bridges session calls into DreamDEX binary Event Contracts and tracks session-held outcome balances.                 |
 
-The submitted app points at the corrected factory above. Earlier local/test
-deployments used a handler with the wrong signature; that factory was replaced
-after the Reactivity callback proof was produced.
+The evidence trail is pinned to the corrected factory that deployed the proof
+clone above. The live app points at a newer factory with the same corrected
+handler plus `rearm()`, so a spent or expired session can be reused instead of
+dead-ending the owner's one-session-per-wallet slot.
 
 ## Local Run
 
@@ -109,7 +111,7 @@ pnpm build
 - `NEXT_PUBLIC_RPC_URL=https://api.infra.testnet.somnia.network`
 - `NEXT_PUBLIC_INDEXER_URL=https://dev.smk.somnia.host/v1/graphql`
 - `NEXT_PUBLIC_WS_RPC_URL=wss://api.infra.testnet.somnia.network/ws`
-- `NEXT_PUBLIC_SESSION_FACTORY=0x26d0A38dB17aC44ed91A90d68a3FDD7B366BCE84`
+- `NEXT_PUBLIC_SESSION_FACTORY=0x7c89D4Ab69F3C7e2e29C08B58407a4EBBa1244E4`
 - `NEXT_PUBLIC_MARKET_ADAPTER=0x6551503d37f739494534f51D5Bbcb3f90077D4f2`
 - `NEXT_PUBLIC_BINARY_MODULE_ADDRESS=0x3ecC694Cef705358864a646142ac17A90E29e388`
 

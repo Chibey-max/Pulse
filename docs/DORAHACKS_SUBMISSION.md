@@ -21,7 +21,7 @@ performs on its own.
 **Live app:** https://pulse-session.vercel.app
 **Evidence page:** https://pulse-session.vercel.app/judge
 **Repo:** https://github.com/Chibey-max/Pulse
-**Demo video:** _paste your uploaded link here_
+**Demo video:** https://youtu.be/Dm4aPn5rOS0
 
 ---
 
@@ -175,7 +175,7 @@ Paste your X/Twitter, Farcaster, LinkedIn, or team profile link here.
 
 **Tagline**
 
-Noncustodial sessions for DreamDEX Event Contracts on Somnia.
+Session Layer for DreamDEX Event Contracts.
 
 **Short description**
 
